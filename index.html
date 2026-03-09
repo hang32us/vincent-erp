@@ -85,9 +85,9 @@
 
             <!-- DASHBOARD SECTION -->
             <section id="dashboard" class="page-section" style="display: block">
-                <div class="stats-grid">
-                    <!-- ... không cần Việt hóa vì có từ app.js ... -->
-                </div>
+                <!-- STATS CARDS - SẼ ĐƯỢC RENDER TỪ JS -->
+                <div class="stats-grid"></div>
+                
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px">
                     <div class="table-container">
                         <h3 id="dashboard_recentOrdersTitle" style="padding: 20px; font-weight: 700">Đơn hàng gần đây</h3>
@@ -202,7 +202,7 @@
                 <div class="page-header">
                     <h2 id="samples_title">Quản lý hàng mẫu</h2>
                     <button class="btn btn-primary" id="addSampleBtn">
-                        <i data-lucide="gift"></i>
+                        <i data-lucide="send"></i>
                         <span id="samples_addBtnText">Gửi hàng mẫu</span>
                     </button>
                 </div>
@@ -378,6 +378,6 @@
         <div class="spinner"></div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app-fixed.js"></script>
 </body>
 </html>

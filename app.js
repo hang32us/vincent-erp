@@ -1,4 +1,11 @@
-// Định nghĩa các nhãn Tiếng Việt & Tiếng Trung
+// ═══════════════════════════════════════════════════════════════
+//  NEXUS ERP - FIXED VERSION
+//  Sửa lỗi: Navigation, Data Loading, Modal Handling, Icons, Charts
+// ═══════════════════════════════════════════════════════════════
+
+// ────────────────────────────────────────────────────────────────
+//  1. NGÔN NGỮ (Tiếng Việt & Tiếng Trung)
+// ────────────────────────────────────────────────────────────────
 const LANGS = {
     vi: {
         sidebar: {
@@ -32,6 +39,7 @@ const LANGS = {
             amount: "Số tiền", account: "Tài khoản", description: "Mô tả", loading: "Đang tải..."
         },
         analytics: { title: "Báo cáo & Phân tích", developing: "Chức năng đang phát triển" },
+        stats: { revenue: "Doanh thu", orders: "Đơn hàng", products: "Sản phẩm", customers: "Khách hàng" },
         productModal: {
             title: "Thêm sản phẩm mới", nameLabel: "Tên sản phẩm *", SKULabel: "SKU *", priceLabel: "Giá bán *",
             statusLabel: "Trạng thái", statusOption1: "Đang bán", statusOption2: "Ngừng bán",
@@ -80,6 +88,7 @@ const LANGS = {
             amount: "金额", account: "账户", description: "描述", loading: "加载中..."
         },
         analytics: { title: "报表与分析", developing: "功能开发中..." },
+        stats: { revenue: "收入", orders: "订单", products: "产品", customers: "客户" },
         productModal: {
             title: "添加新产品", nameLabel: "产品名称 *", SKULabel: "SKU *", priceLabel: "价格 *",
             statusLabel: "状态", statusOption1: "在售", statusOption2: "停售",
@@ -97,11 +106,54 @@ const LANGS = {
         }
     }
 };
+
 let currentLang = "vi";
 
-// Hàm Việt hóa/Trung hóa toàn bộ giao diện
+// ────────────────────────────────────────────────────────────────
+//  2. DỮ LIỆU MẪU (Mock Data)
+// ────────────────────────────────────────────────────────────────
+const mockData = {
+    products: [
+        { SKU: "SP001", name: "Áo thun cotton", category: "Thời trang", price: 150000, stock: 120, status: "Đang bán" },
+        { SKU: "SP002", name: "Quần jean", category: "Thời trang", price: 350000, stock: 85, status: "Đang bán" },
+        { SKU: "SP003", name: "Giày thể thao", category: "Giày dép", price: 550000, stock: 45, status: "Đang bán" },
+        { SKU: "SP004", name: "Túi xách da", category: "Phụ kiện", price: 450000, stock: 30, status: "Đang bán" },
+        { SKU: "SP005", name: "Đồng hồ", category: "Phụ kiện", price: 1200000, stock: 15, status: "Ngừng bán" }
+    ],
+    orders: [
+        { id: "DH001", date: "2024-03-15", customer: "Nguyễn Văn A", total: 850000, payment: "Chuyển khoản", status: "Hoàn thành" },
+        { id: "DH002", date: "2024-03-16", customer: "Trần Thị B", total: 1200000, payment: "Tiền mặt", status: "Đang xử lý" },
+        { id: "DH003", date: "2024-03-16", customer: "Lê Văn C", total: 550000, payment: "COD", status: "Đang giao" },
+        { id: "DH004", date: "2024-03-17", customer: "Phạm Thị D", total: 2100000, payment: "Chuyển khoản", status: "Hoàn thành" },
+        { id: "DH005", date: "2024-03-17", customer: "Hoàng Văn E", total: 450000, payment: "Tiền mặt", status: "Chờ xác nhận" }
+    ],
+    customers: [
+        { id: "KH001", name: "Nguyễn Văn A", phone: "0901234567", address: "Hà Nội", group: "VIP", totalSpent: 5200000, debt: 0 },
+        { id: "KH002", name: "Trần Thị B", phone: "0912345678", address: "TP.HCM", group: "Khách sỉ", totalSpent: 3800000, debt: 500000 },
+        { id: "KH003", name: "Lê Văn C", phone: "0923456789", address: "Đà Nẵng", group: "Khách lẻ", totalSpent: 1200000, debt: 0 },
+        { id: "KH004", name: "Phạm Thị D", phone: "0934567890", address: "Cần Thơ", group: "VIP", totalSpent: 7500000, debt: 0 },
+        { id: "KH005", name: "Hoàng Văn E", phone: "0945678901", address: "Hải Phòng", group: "Khách lẻ", totalSpent: 890000, debt: 200000 }
+    ],
+    samples: [
+        { date: "2024-03-10", customer: "Nguyễn Văn A", SKU: "SP001", productName: "Áo thun cotton", quantity: 5, note: "Gửi để khách xem mẫu" },
+        { date: "2024-03-12", customer: "Trần Thị B", SKU: "SP003", productName: "Giày thể thao", quantity: 2, note: "Test chất lượng" },
+        { date: "2024-03-14", customer: "Lê Văn C", SKU: "SP002", productName: "Quần jean", quantity: 3, note: "Khách yêu cầu gửi mẫu" }
+    ],
+    cashflow: [
+        { date: "2024-03-15", type: "Thu", category: "Bán hàng", amount: 850000, account: "Ngân hàng", description: "Thu từ đơn DH001" },
+        { date: "2024-03-16", type: "Chi", category: "Nhập hàng", amount: 2500000, account: "Tiền mặt", description: "Nhập hàng từ nhà cung cấp" },
+        { date: "2024-03-16", type: "Thu", category: "Bán hàng", amount: 1200000, account: "Tiền mặt", description: "Thu từ đơn DH002" },
+        { date: "2024-03-17", type: "Chi", category: "Chi phí vận hành", amount: 500000, account: "Ngân hàng", description: "Tiền thuê mặt bằng" },
+        { date: "2024-03-17", type: "Thu", category: "Bán hàng", amount: 2100000, account: "Ngân hàng", description: "Thu từ đơn DH004" }
+    ]
+};
+
+// ────────────────────────────────────────────────────────────────
+//  3. CẬP NHẬT NGÔN NGỮ
+// ────────────────────────────────────────────────────────────────
 function updateLanguage() {
     const l = LANGS[currentLang];
+    
     // Sidebar
     document.getElementById('sidebar_mainMenu').innerText = l.sidebar.mainMenu;
     document.getElementById('sidebar_operationMenu').innerText = l.sidebar.operationMenu;
@@ -119,14 +171,12 @@ function updateLanguage() {
     document.getElementById('searchBox').placeholder = l.header.search;
 
     // Dashboard
-    document.getElementById('pageTitle').innerText = l.dashboard.recentOrdersTitle;
     document.getElementById('dashboard_recentOrdersTitle').innerText = l.dashboard.recentOrdersTitle;
     document.getElementById('dashboard_orderID').innerText = l.dashboard.orderID;
     document.getElementById('dashboard_customer').innerText = l.dashboard.customer;
     document.getElementById('dashboard_orderDate').innerText = l.dashboard.orderDate;
     document.getElementById('dashboard_total').innerText = l.dashboard.total;
     document.getElementById('dashboard_status').innerText = l.dashboard.status;
-    document.getElementById('dashboard_loading').innerText = l.dashboard.loading;
     document.getElementById('dashboard_trendTitle').innerText = l.dashboard.trendTitle;
 
     // Products
@@ -139,7 +189,6 @@ function updateLanguage() {
     document.getElementById('products_stock').innerText = l.products.stock;
     document.getElementById('products_status').innerText = l.products.status;
     document.getElementById('products_action').innerText = l.products.action;
-    document.getElementById('products_loading').innerText = l.products.loading;
 
     // Orders
     document.getElementById('orders_title').innerText = l.orders.title;
@@ -150,7 +199,6 @@ function updateLanguage() {
     document.getElementById('orders_paymentMethod').innerText = l.orders.paymentMethod;
     document.getElementById('orders_status').innerText = l.orders.status;
     document.getElementById('orders_detail').innerText = l.orders.detail;
-    document.getElementById('orders_loading').innerText = l.orders.loading;
 
     // Customers
     document.getElementById('customers_title').innerText = l.customers.title;
@@ -162,7 +210,6 @@ function updateLanguage() {
     document.getElementById('customers_group').innerText = l.customers.group;
     document.getElementById('customers_totalSpent').innerText = l.customers.totalSpent;
     document.getElementById('customers_debt').innerText = l.customers.debt;
-    document.getElementById('customers_loading').innerText = l.customers.loading;
 
     // Samples
     document.getElementById('samples_title').innerText = l.samples.title;
@@ -173,7 +220,6 @@ function updateLanguage() {
     document.getElementById('samples_productName').innerText = l.samples.productName;
     document.getElementById('samples_quantity').innerText = l.samples.quantity;
     document.getElementById('samples_note').innerText = l.samples.note;
-    document.getElementById('samples_loading').innerText = l.samples.loading;
 
     // Cashflow
     document.getElementById('cashflow_title').innerText = l.cashflow.title;
@@ -184,7 +230,6 @@ function updateLanguage() {
     document.getElementById('cashflow_amount').innerText = l.cashflow.amount;
     document.getElementById('cashflow_account').innerText = l.cashflow.account;
     document.getElementById('cashflow_description').innerText = l.cashflow.description;
-    document.getElementById('cashflow_loading').innerText = l.cashflow.loading;
 
     // Analytics
     document.getElementById('analytics_title').innerText = l.analytics.title;
@@ -207,8 +252,6 @@ function updateLanguage() {
     document.getElementById('sampleModal_productLabel').innerText = l.sampleModal.productLabel;
     document.getElementById('sampleModal_quantityLabel').innerText = l.sampleModal.quantityLabel;
     document.getElementById('sampleModal_noteLabel').innerText = l.sampleModal.noteLabel;
-    document.getElementById('sampleModal_loadingCustomer').innerText = l.sampleModal.loadingCustomer;
-    document.getElementById('sampleModal_loadingProduct').innerText = l.sampleModal.loadingProduct;
     document.getElementById('sampleModal_cancelBtn').innerText = l.sampleModal.cancelBtn;
     document.getElementById('sampleModal_submitBtn').innerText = l.sampleModal.submitBtn;
 
@@ -223,13 +266,454 @@ function updateLanguage() {
     document.getElementById('customerModal_groupOption3').innerText = l.customerModal.groupOption3;
     document.getElementById('customerModal_cancelBtn').innerText = l.customerModal.cancelBtn;
     document.getElementById('customerModal_submitBtn').innerText = l.customerModal.submitBtn;
+
+    // Refresh stats cards
+    renderStatsCards();
 }
 
-// Gắn event cho switch ngôn ngữ
+// ────────────────────────────────────────────────────────────────
+//  4. NAVIGATION (Chuyển trang)
+// ────────────────────────────────────────────────────────────────
+function switchPage(pageName) {
+    // Ẩn tất cả sections
+    document.querySelectorAll('.page-section').forEach(sec => sec.style.display = 'none');
+    
+    // Hiện section được chọn
+    const targetSection = document.getElementById(pageName);
+    if (targetSection) targetSection.style.display = 'block';
+
+    // Bỏ active khỏi tất cả nav-items
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    
+    // Thêm active vào nav-item được chọn
+    const activeNav = document.querySelector(`.nav-item[data-page="${pageName}"]`);
+    if (activeNav) activeNav.classList.add('active');
+
+    // Cập nhật title
+    const titles = {
+        dashboard: LANGS[currentLang].sidebar.dashboard,
+        products: LANGS[currentLang].products.title,
+        orders: LANGS[currentLang].orders.title,
+        customers: LANGS[currentLang].customers.title,
+        samples: LANGS[currentLang].samples.title,
+        cashflow: LANGS[currentLang].cashflow.title,
+        analytics: LANGS[currentLang].analytics.title
+    };
+    document.getElementById('pageTitle').innerText = titles[pageName] || '';
+
+    // Load dữ liệu cho trang
+    loadPageData(pageName);
+}
+
+// ────────────────────────────────────────────────────────────────
+//  5. LOAD DỮ LIỆU CHO TỪNG TRANG
+// ────────────────────────────────────────────────────────────────
+function loadPageData(pageName) {
+    switch(pageName) {
+        case 'dashboard':
+            renderDashboard();
+            break;
+        case 'products':
+            renderProductsTable();
+            break;
+        case 'orders':
+            renderOrdersTable();
+            break;
+        case 'customers':
+            renderCustomersTable();
+            break;
+        case 'samples':
+            renderSamplesTable();
+            break;
+        case 'cashflow':
+            renderCashflowTable();
+            break;
+    }
+}
+
+// ────────────────────────────────────────────────────────────────
+//  6. RENDER DASHBOARD
+// ────────────────────────────────────────────────────────────────
+function renderStatsCards() {
+    const l = LANGS[currentLang].stats;
+    const statsGrid = document.querySelector('.stats-grid');
+    
+    const totalRevenue = mockData.cashflow
+        .filter(t => t.type === 'Thu')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    statsGrid.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-icon revenue">
+                <i data-lucide="trending-up"></i>
+            </div>
+            <div class="stat-content">
+                <h3>${totalRevenue.toLocaleString()}đ</h3>
+                <p>${l.revenue}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orders">
+                <i data-lucide="shopping-bag"></i>
+            </div>
+            <div class="stat-content">
+                <h3>${mockData.orders.length}</h3>
+                <p>${l.orders}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon products">
+                <i data-lucide="box"></i>
+            </div>
+            <div class="stat-content">
+                <h3>${mockData.products.length}</h3>
+                <p>${l.products}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon customers">
+                <i data-lucide="user-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>${mockData.customers.length}</h3>
+                <p>${l.customers}</p>
+            </div>
+        </div>
+    `;
+    
+    // Re-init Lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderDashboard() {
+    renderStatsCards();
+    
+    // Render recent orders
+    const tbody = document.getElementById('recentOrdersTableBody');
+    tbody.innerHTML = mockData.orders.slice(0, 5).map(order => `
+        <tr>
+            <td><strong>${order.id}</strong></td>
+            <td>${order.customer}</td>
+            <td>${order.date}</td>
+            <td><strong>${order.total.toLocaleString()}đ</strong></td>
+            <td><span class="badge ${order.status === 'Hoàn thành' ? 'badge-success' : 'badge-warning'}">${order.status}</span></td>
+        </tr>
+    `).join('');
+
+    // Render revenue chart
+    renderRevenueChart();
+}
+
+function renderRevenueChart() {
+    const ctx = document.getElementById('dashboardRevenueChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if any
+    if (window.revenueChart) window.revenueChart.destroy();
+
+    const labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const data = [1200000, 1900000, 1500000, 2200000, 1800000, 2400000, 2100000];
+
+    window.revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Doanh thu',
+                data: data,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return (value / 1000000).toFixed(1) + 'M';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ────────────────────────────────────────────────────────────────
+//  7. RENDER TABLES
+// ────────────────────────────────────────────────────────────────
+function renderProductsTable() {
+    const tbody = document.getElementById('productsTableBody');
+    tbody.innerHTML = mockData.products.map(p => `
+        <tr>
+            <td><strong>${p.SKU}</strong></td>
+            <td>${p.name}</td>
+            <td>${p.category}</td>
+            <td><strong>${p.price.toLocaleString()}đ</strong></td>
+            <td>${p.stock}</td>
+            <td><span class="badge ${p.status === 'Đang bán' ? 'badge-success' : 'badge-danger'}">${p.status}</span></td>
+            <td>
+                <button class="btn btn-sm btn-secondary">
+                    <i data-lucide="edit-2"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderOrdersTable() {
+    const tbody = document.getElementById('ordersTableBody');
+    tbody.innerHTML = mockData.orders.map(o => `
+        <tr>
+            <td><strong>${o.id}</strong></td>
+            <td>${o.date}</td>
+            <td>${o.customer}</td>
+            <td><strong>${o.total.toLocaleString()}đ</strong></td>
+            <td>${o.payment}</td>
+            <td><span class="badge ${o.status === 'Hoàn thành' ? 'badge-success' : 'badge-warning'}">${o.status}</span></td>
+            <td>
+                <button class="btn btn-sm btn-secondary">
+                    <i data-lucide="eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderCustomersTable() {
+    const tbody = document.getElementById('customersTableBody');
+    tbody.innerHTML = mockData.customers.map(c => `
+        <tr>
+            <td><strong>${c.id}</strong></td>
+            <td>${c.name}</td>
+            <td>${c.phone}</td>
+            <td>${c.address}</td>
+            <td><span class="badge ${c.group === 'VIP' ? 'badge-success' : 'badge-warning'}">${c.group}</span></td>
+            <td><strong>${c.totalSpent.toLocaleString()}đ</strong></td>
+            <td style="color: ${c.debt > 0 ? 'var(--danger)' : 'var(--success)'}"><strong>${c.debt.toLocaleString()}đ</strong></td>
+        </tr>
+    `).join('');
+}
+
+function renderSamplesTable() {
+    const tbody = document.getElementById('samplesTableBody');
+    tbody.innerHTML = mockData.samples.map(s => `
+        <tr>
+            <td>${s.date}</td>
+            <td>${s.customer}</td>
+            <td><strong>${s.SKU}</strong></td>
+            <td>${s.productName}</td>
+            <td>${s.quantity}</td>
+            <td>${s.note}</td>
+        </tr>
+    `).join('');
+}
+
+function renderCashflowTable() {
+    const tbody = document.getElementById('cashflowTableBody');
+    const totalIncome = mockData.cashflow.filter(t => t.type === 'Thu').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpense = mockData.cashflow.filter(t => t.type === 'Chi').reduce((sum, t) => sum + t.amount, 0);
+    const balance = totalIncome - totalExpense;
+    
+    document.getElementById('currentBalance').innerText = balance.toLocaleString() + 'đ';
+    
+    tbody.innerHTML = mockData.cashflow.map(t => `
+        <tr>
+            <td>${t.date}</td>
+            <td><span class="badge ${t.type === 'Thu' ? 'badge-success' : 'badge-danger'}">${t.type}</span></td>
+            <td>${t.category}</td>
+            <td style="color: ${t.type === 'Thu' ? 'var(--success)' : 'var(--danger)'}"><strong>${t.amount.toLocaleString()}đ</strong></td>
+            <td>${t.account}</td>
+            <td>${t.description}</td>
+        </tr>
+    `).join('');
+}
+
+// ────────────────────────────────────────────────────────────────
+//  8. MODAL HANDLING
+// ────────────────────────────────────────────────────────────────
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'flex';
+    
+    // Load dropdown data for sample modal
+    if (modalId === 'sampleModal') {
+        loadSampleModalData();
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        // Reset form
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+    }
+}
+
+function loadSampleModalData() {
+    // Load customers
+    const customerSelect = document.getElementById('sampleCustomer');
+    customerSelect.innerHTML = mockData.customers.map(c => 
+        `<option value="${c.id}">${c.name}</option>`
+    ).join('');
+    
+    // Load products
+    const productSelect = document.getElementById('sampleSKU');
+    productSelect.innerHTML = mockData.products.map(p => 
+        `<option value="${p.SKU}">${p.SKU} - ${p.name}</option>`
+    ).join('');
+}
+
+// ────────────────────────────────────────────────────────────────
+//  9. FORM SUBMISSIONS
+// ────────────────────────────────────────────────────────────────
+function handleProductFormSubmit(e) {
+    e.preventDefault();
+    
+    const newProduct = {
+        SKU: document.getElementById('productSKU').value,
+        name: document.getElementById('productName').value,
+        category: 'Mới',
+        price: parseInt(document.getElementById('productSalePrice').value),
+        stock: 0,
+        status: document.getElementById('productStatus').value
+    };
+    
+    mockData.products.push(newProduct);
+    renderProductsTable();
+    closeModal('productModal');
+    showNotification('Thêm sản phẩm thành công!', 'success');
+}
+
+function handleSampleFormSubmit(e) {
+    e.preventDefault();
+    
+    const customer = mockData.customers.find(c => c.id === document.getElementById('sampleCustomer').value);
+    const productSKU = document.getElementById('sampleSKU').value;
+    const product = mockData.products.find(p => p.SKU === productSKU);
+    
+    const newSample = {
+        date: new Date().toISOString().split('T')[0],
+        customer: customer.name,
+        SKU: productSKU,
+        productName: product.name,
+        quantity: parseInt(document.getElementById('sampleQuantity').value),
+        note: document.getElementById('sampleNote').value
+    };
+    
+    mockData.samples.push(newSample);
+    renderSamplesTable();
+    closeModal('sampleModal');
+    showNotification('Gửi hàng mẫu thành công!', 'success');
+}
+
+function handleCustomerFormSubmit(e) {
+    e.preventDefault();
+    
+    const newCustomer = {
+        id: 'KH' + String(mockData.customers.length + 1).padStart(3, '0'),
+        name: document.getElementById('customerName').value,
+        phone: document.getElementById('customerPhone').value,
+        address: document.getElementById('customerAddress').value,
+        group: document.getElementById('customerGroup').value,
+        totalSpent: 0,
+        debt: 0
+    };
+    
+    mockData.customers.push(newCustomer);
+    renderCustomersTable();
+    closeModal('customerModal');
+    showNotification('Thêm khách hàng thành công!', 'success');
+}
+
+// ────────────────────────────────────────────────────────────────
+//  10. NOTIFICATIONS
+// ────────────────────────────────────────────────────────────────
+function showNotification(message, type = 'info') {
+    const notif = document.createElement('div');
+    notif.className = `notification notification-${type} show`;
+    notif.innerHTML = `
+        <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notif);
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    setTimeout(() => {
+        notif.classList.remove('show');
+        setTimeout(() => notif.remove(), 400);
+    }, 3000);
+}
+
+// ────────────────────────────────────────────────────────────────
+//  11. INITIALIZATION
+// ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Set current date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('vi-VN', options);
+
+    // Language switcher
     document.getElementById('languageSwitcher').addEventListener('change', function() {
         currentLang = this.value;
         updateLanguage();
     });
-    updateLanguage(); // Giao diện mặc định là tiếng Việt khi load lần đầu
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const pageName = item.getAttribute('data-page');
+            switchPage(pageName);
+        });
+    });
+
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+        const currentPage = document.querySelector('.nav-item.active').getAttribute('data-page');
+        loadPageData(currentPage);
+        showNotification('Dữ liệu đã được cập nhật', 'success');
+    });
+
+    // Modal triggers
+    document.getElementById('addProductBtn')?.addEventListener('click', () => openModal('productModal'));
+    document.getElementById('addSampleBtn')?.addEventListener('click', () => openModal('sampleModal'));
+    document.getElementById('addCustomerBtn')?.addEventListener('click', () => openModal('customerModal'));
+
+    // Form submissions
+    document.getElementById('productForm')?.addEventListener('submit', handleProductFormSubmit);
+    document.getElementById('sampleForm')?.addEventListener('submit', handleSampleFormSubmit);
+    document.getElementById('customerForm')?.addEventListener('submit', handleCustomerFormSubmit);
+
+    // Close modals on outside click
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Initial load
+    updateLanguage();
+    switchPage('dashboard');
 });
