@@ -1,12 +1,12 @@
 /**
  * ════════════════════════════════════════════════════════════════
- * NEXUS ERP - MAIN APPLICATION LOGIC
- * Version: 3.5 Ultimate Professional
+ * NEXUS ERP - MAIN APPLICATION LOGIC (OPTIMIZED VERSION)
+ * Version: 3.6 Speed Optimized
  * ════════════════════════════════════════════════════════════════
  */
 
 const CONFIG = {
-    API_URL: "https://script.google.com/macros/s/AKfycbxGaVvaSVSpUiW3BXVKdOQ3-g2XXbtQP-u830UZUT4eFaSgyySFlVU1vkINDb8goho/exec",
+    API_URL: "https://script.google.com/macros/s/AKfycbzkO9loxXb7XKpgqZYlMx2eRFBdLQ43qa4lxnK-B4t7Juz9zoGQqtwbo3BX7udbL5o/exec",
     REFRESH_INTERVAL: 60000,
 };
 
@@ -14,7 +14,9 @@ const state = {
     currentPage: 'dashboard',
     charts: {},
     cache: {},
-    cacheDuration: 300000 // 5 minutes in milliseconds
+    cacheDuration: 300000, // 5 minutes
+    dataLoaded: {}, // Track which pages have been loaded
+    prefetchQueue: ['products', 'customers'] // Prefetch these pages
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -23,6 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initHandlers();
     navigateTo('dashboard');
     lucide.createIcons();
+    
+    // Prefetch common pages in background after 2 seconds
+    setTimeout(() => prefetchData(), 2000);
 });
 
 function initDateTime() {
@@ -46,8 +51,14 @@ function initNavigation() {
     });
 }
 
+// ═══════════════════════════════════════════════════════════════
+// OPTIMIZED NAVIGATION - INSTANT SWITCHING
+// ═══════════════════════════════════════════════════════════════
+
 function navigateTo(page) {
     state.currentPage = page;
+    
+    // 1. UPDATE UI IMMEDIATELY (no waiting for data)
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
     if (activeNav) activeNav.classList.add('active');
@@ -64,24 +75,129 @@ function navigateTo(page) {
     };
     document.getElementById('pageTitle').innerText = titleMap[page] || 'Trang chủ';
 
+    // 2. SWITCH SECTIONS INSTANTLY
     document.querySelectorAll('.page-section').forEach(s => s.style.display = 'none');
     const target = document.getElementById(page);
     if (target) target.style.display = 'block';
 
-    loadPageData(page);
-    lucide.createIcons();
+    // 3. LOAD DATA (use cache if available, show skeleton while loading)
+    loadPageDataOptimized(page);
+    
+    // 4. RENDER ICONS ONLY FOR VISIBLE SECTION (faster)
+    setTimeout(() => {
+        if (target) {
+            const icons = target.querySelectorAll('[data-lucide]');
+            icons.forEach(icon => {
+                const iconName = icon.getAttribute('data-lucide');
+                if (iconName && !icon.querySelector('svg')) {
+                    lucide.createIcons({ attrs: { 'data-lucide': iconName } });
+                }
+            });
+        }
+    }, 0);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// OPTIMIZED DATA LOADING WITH CACHE & SKELETON
+// ═══════════════════════════════════════════════════════════════
+
+function loadPageDataOptimized(page) {
+    // Check if data already loaded and cached
+    if (state.dataLoaded[page] && isCacheValid(page)) {
+        console.log(`✅ Using cached data for ${page}`);
+        return; // Don't reload, use existing DOM
+    }
+
+    // Show skeleton/loading state
+    showSkeletonForPage(page);
+
+    // Load data with cache
+    switch (page) {
+        case 'dashboard': 
+            loadDashboardData(true); 
+            break;
+        case 'products': 
+            loadProductsData(true); 
+            break;
+        case 'orders': 
+            loadOrdersData(true); 
+            break;
+        case 'customers': 
+            loadCustomersData(true); 
+            break;
+        case 'samples': 
+            loadSamplesData(true); 
+            break;
+        case 'cashflow': 
+            loadCashFlowData(true); 
+            break;
+    }
+}
+
+function isCacheValid(page) {
+    const cacheKey = `get${page.charAt(0).toUpperCase() + page.slice(1)}`;
+    const cached = state.cache[cacheKey];
+    if (!cached) return false;
+    return (Date.now() - cached.timestamp) < state.cacheDuration;
+}
+
+function showSkeletonForPage(page) {
+    // Show loading skeleton instead of "Dang tai..."
+    const skeletons = {
+        products: `
+            <tr><td colspan="7">
+                <div class="skeleton-loader">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                </div>
+            </td></tr>
+        `,
+        orders: `<tr><td colspan="7"><div class="skeleton-loader"><div class="skeleton-line"></div></div></td></tr>`,
+        customers: `<tr><td colspan="7"><div class="skeleton-loader"><div class="skeleton-line"></div></div></td></tr>`,
+    };
+    
+    const tbody = document.getElementById(`${page}TableBody`);
+    if (tbody && skeletons[page]) {
+        tbody.innerHTML = skeletons[page];
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PREFETCH DATA FOR COMMON PAGES
+// ═══════════════════════════════════════════════════════════════
+
+async function prefetchData() {
+    console.log('🚀 Prefetching common pages...');
+    
+    for (const page of state.prefetchQueue) {
+        if (!state.dataLoaded[page]) {
+            await callAPI(`get${page.charAt(0).toUpperCase() + page.slice(1)}`, 'POST', null, true);
+        }
+    }
+    
+    console.log('✅ Prefetch completed');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API CALL WITH ENHANCED CACHING
+// ═══════════════════════════════════════════════════════════════
 
 async function callAPI(action, method = 'POST', data = null, useCache = false) {
     const cacheKey = action + (data ? JSON.stringify(data) : '');
 
-    // Trả về dữ liệu từ bộ nhớ đệm nếu còn mới (dưới 5 phút)
+    // Return cached data if available and fresh
     if (useCache && state.cache[cacheKey] && (Date.now() - state.cache[cacheKey].timestamp < state.cacheDuration)) {
-        console.log('Using cache for:', action);
+        console.log('📦 Cache hit:', action);
         return state.cache[cacheKey].data;
     }
 
-    showLoading(true);
+    // Only show global loading for non-cached calls
+    const isBackgroundCall = state.prefetchQueue.some(p => action.toLowerCase().includes(p));
+    if (!isBackgroundCall) {
+        showLoading(true);
+    }
+
     try {
         const url = CONFIG.API_URL;
         const options = {
@@ -97,7 +213,7 @@ async function callAPI(action, method = 'POST', data = null, useCache = false) {
         const result = await response.json();
         if (!result.success) throw new Error(result.error || 'Server error');
 
-        // Lưu vào bộ nhớ đệm cho các tác vụ lấy dữ liệu (GET)
+        // Cache all GET requests
         if (action.startsWith('get')) {
             state.cache[cacheKey] = {
                 data: result,
@@ -114,37 +230,28 @@ async function callAPI(action, method = 'POST', data = null, useCache = false) {
         } else {
             errorMsg += ' ' + error.message;
         }
-        showNotification(errorMsg, 'error');
+        if (!isBackgroundCall) {
+            showNotification(errorMsg, 'error');
+        }
         return { success: false };
     } finally {
-        showLoading(false);
+        if (!isBackgroundCall) {
+            showLoading(false);
+        }
     }
 }
 
-/**
- * Xóa bộ nhớ đệm khi dữ liệu thay đổi
- */
 function invalidateCache(pattern) {
     Object.keys(state.cache).forEach(key => {
-        if (key.includes(pattern)) delete state.cache[key];
+        if (key.includes(pattern)) {
+            delete state.cache[key];
+            delete state.dataLoaded[pattern];
+        }
     });
 }
 
-function loadPageData(page) {
-    switch (page) {
-        case 'dashboard': loadDashboardData(); break;
-        case 'products': loadProductsData(); break;
-        case 'orders': loadOrdersData(); break;
-        case 'customers': loadCustomersData(); break;
-        case 'inventory': loadInventoryData(); break;
-        case 'samples': loadSamplesData(); break;
-        case 'analytics': loadAnalyticsData(); break;
-        case 'cashflow': loadCashFlowData(); break;
-    }
-}
-
 // ═══════════════════════════════════════════════════════════════
-// DATA LOADERS
+// DATA LOADERS (OPTIMIZED)
 // ═══════════════════════════════════════════════════════════════
 
 async function loadDashboardData(useCache = true) {
@@ -158,6 +265,8 @@ async function loadDashboardData(useCache = true) {
 
     renderRecentOrders(res.recentOrders || []);
     renderDashboardChart(res.revenueTrend || []);
+    
+    state.dataLoaded.dashboard = true;
 }
 
 async function loadProductsData(useCache = true) {
@@ -165,6 +274,8 @@ async function loadProductsData(useCache = true) {
     if (!res.success) return;
 
     const tbody = document.getElementById('productsTableBody');
+    if (!tbody) return;
+
     tbody.innerHTML = res.products.map(p => `
         <tr>
             <td style="font-weight:700; color:var(--primary)">${p.sku}</td>
@@ -178,13 +289,20 @@ async function loadProductsData(useCache = true) {
             </td>
         </tr>
     `).join('');
-    lucide.createIcons();
+    
+    state.dataLoaded.products = true;
+    
+    // Render icons only for this table
+    setTimeout(() => lucide.createIcons(), 0);
 }
 
 async function loadOrdersData(useCache = true) {
     const res = await callAPI('getOrders', 'POST', null, useCache);
     if (!res.success) return;
+    
     const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+    
     tbody.innerHTML = res.orders.map(o => `
         <tr>
             <td style="font-weight:700">#${o.id}</td>
@@ -196,76 +314,61 @@ async function loadOrdersData(useCache = true) {
             <td><button class="btn btn-sm btn-secondary"><i data-lucide="eye"></i></button></td>
         </tr>
     `).join('');
-    lucide.createIcons();
+    
+    state.dataLoaded.orders = true;
+    setTimeout(() => lucide.createIcons(), 0);
 }
 
 async function loadCustomersData(useCache = true) {
     const res = await callAPI('getCustomers', 'POST', null, useCache);
     if (!res.success) return;
+    
     const tbody = document.getElementById('customersTableBody');
+    if (!tbody) return;
+    
     tbody.innerHTML = res.customers.map(c => `
         <tr>
             <td style="font-weight:700">${c.id}</td>
-            <td style="font-weight:600">${c.name}</td>
+            <td>${c.name}</td>
             <td>${c.phone}</td>
-            <td>${c.address || ''}</td>
-            <td><span class="badge badge-info">${c.group}</span></td>
+            <td>${c.address}</td>
+            <td><span class="badge badge-warning">${c.group}</span></td>
             <td style="font-weight:700">${formatCurrency(c.totalSpent)}</td>
-            <td style="font-weight:700; color:${c.debt > 0 ? 'var(--danger)' : 'inherit'}">${formatCurrency(c.debt)}</td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="showNotification('Tính năng đang phát triển', 'info')"><i data-lucide="edit-2"></i></button>
-            </td>
+            <td style="font-weight:700; color:${c.debt > 0 ? 'var(--danger)' : 'var(--success)'}">${formatCurrency(c.debt)}</td>
         </tr>
     `).join('');
-    lucide.createIcons();
-}
-
-async function loadInventoryData(useCache = true) {
-    const res = await callAPI('getProducts', 'POST', null, useCache);
-    if (!res.success) return;
-
-    let totalVal = 0;
-    let lowStock = 0;
-    const tbody = document.getElementById('inventoryTableBody');
-    tbody.innerHTML = res.products.map(p => {
-        const val = p.stock * p.costPrice;
-        totalVal += val;
-        if (p.stock < 10) lowStock++;
-        return `
-            <tr>
-                <td style="font-weight:700">${p.sku}</td>
-                <td>${p.name}</td>
-                <td style="font-weight:700">${p.stock}</td>
-                <td style="font-weight:700">${formatCurrency(val)}</td>
-                <td><span class="badge ${p.stock > 0 ? 'badge-success' : 'badge-danger'}">${p.stock > 0 ? 'Còn hàng' : 'Hết hàng'}</span></td>
-            </tr>
-        `;
-    }).join('');
-
-    document.getElementById('totalInventoryValue').innerText = formatCurrency(totalVal);
-    document.getElementById('lowStockCount').innerText = lowStock;
-    lucide.createIcons();
+    
+    state.dataLoaded.customers = true;
 }
 
 async function loadSamplesData(useCache = true) {
     const res = await callAPI('getSamples', 'POST', null, useCache);
     if (!res.success) return;
+    
     const tbody = document.getElementById('samplesTableBody');
-    tbody.innerHTML = res.samples.reverse().map(s => `
+    if (!tbody) return;
+    
+    tbody.innerHTML = res.samples.map(s => `
         <tr>
             <td>${new Date(s.date).toLocaleDateString('vi-VN')}</td>
-            <td style="font-weight:600">${s.customer}</td>
-            <td>${s.productName} (${s.sku})</td>
+            <td>${s.customer}</td>
+            <td style="font-weight:700; color:var(--primary)">${s.sku}</td>
+            <td>${s.productName}</td>
             <td style="font-weight:700">${s.quantity}</td>
-            <td style="font-style:italic; color:var(--text-muted)">${s.note || ''}</td>
+            <td style="color:var(--text-muted)">${s.note || '-'}</td>
         </tr>
     `).join('');
+    
+    state.dataLoaded.samples = true;
 }
 
 async function loadCashFlowData(useCache = true) {
     const res = await callAPI('getCashFlow', 'POST', null, useCache);
     if (!res.success) return;
+    
     const tbody = document.getElementById('cashflowTableBody');
+    if (!tbody) return;
+    
     tbody.innerHTML = res.transactions.reverse().map(t => `
         <tr>
             <td>${new Date(t.date).toLocaleDateString('vi-VN')}</td>
@@ -276,7 +379,9 @@ async function loadCashFlowData(useCache = true) {
             <td>${t.description}</td>
         </tr>
     `).join('');
+    
     document.getElementById('currentBalance').innerText = formatCurrency(res.balance || 0);
+    state.dataLoaded.cashflow = true;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -285,8 +390,8 @@ async function loadCashFlowData(useCache = true) {
 
 function initHandlers() {
     document.getElementById('refreshBtn').addEventListener('click', () => {
-        invalidateCache(state.currentPage); // Xóa cache trang hiện tại
-        loadPageData(state.currentPage);    // Tải mới
+        invalidateCache(state.currentPage);
+        loadPageDataOptimized(state.currentPage);
         showNotification('Đã cập nhật dữ liệu mới nhất.', 'info');
     });
 
@@ -302,11 +407,11 @@ function initHandlers() {
         };
         const res = await callAPI('createProduct', 'POST', data);
         if (res.success) {
-            invalidateCache('getProducts'); // Xóa cache liên quan
+            invalidateCache('getProducts');
             invalidateCache('getDashboard');
             showNotification('Thêm sản phẩm thành công!', 'success');
             closeModal('productModal');
-            loadProductsData(false); // Buộc tải mới
+            loadProductsData(false);
         }
     });
 
@@ -319,7 +424,6 @@ function initHandlers() {
 
         openModal('sampleModal');
 
-        // Tải từ cache nếu có để mở modal nhanh
         const [prodRes, custRes] = await Promise.all([
             callAPI('getProducts', 'POST', null, true),
             callAPI('getCustomers', 'POST', null, true)
@@ -354,7 +458,6 @@ function initHandlers() {
         }
     });
 
-    // Add Customer
     document.getElementById('addCustomerBtn').addEventListener('click', () => openModal('customerModal'));
 
     document.getElementById('customerForm').addEventListener('submit', async (e) => {
@@ -382,7 +485,10 @@ function initHandlers() {
 
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function showLoading(show) { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
+function showLoading(show) { 
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = show ? 'flex' : 'none'; 
+}
 
 function showNotification(msg, type) {
     const toast = document.createElement('div');
@@ -463,4 +569,3 @@ function renderRecentOrders(orders) {
 
 window.closeModal = closeModal;
 window.editProduct = (sku) => showNotification(`Chỉnh sửa ${sku} - Liên hệ Admin`, 'info');
-
