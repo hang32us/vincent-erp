@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus ERP - He thong quan ly chuyen nghiep</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>NEXUS ERP</span>
+            </div>
+
+            <h3>QUAN LY CHINH</h3>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-page="dashboard">
+                    <i data-lucide="home"></i>
+                    <span>Bang dieu khien</span>
+                </li>
+                <li class="nav-item" data-page="products">
+                    <i data-lucide="package"></i>
+                    <span>Kho san pham</span>
+                </li>
+                <li class="nav-item" data-page="orders">
+                    <i data-lucide="shopping-cart"></i>
+                    <span>Don hang</span>
+                </li>
+                <li class="nav-item" data-page="customers">
+                    <i data-lucide="users"></i>
+                    <span>Khach hang</span>
+                </li>
+            </ul>
+
+            <h3 style="margin-top: 24px">VAN HANH</h3>
+            <ul class="nav-menu">
+                <li class="nav-item" data-page="samples">
+                    <i data-lucide="gift"></i>
+                    <span>Hang mau</span>
+                </li>
+                <li class="nav-item" data-page="cashflow">
+                    <i data-lucide="dollar-sign"></i>
+                    <span>Dong tien</span>
+                </li>
+            </ul>
+
+            <h3 style="margin-top: 24px">BAO CAO</h3>
+            <ul class="nav-menu">
+                <li class="nav-item" data-page="analytics">
+                    <i data-lucide="bar-chart-3"></i>
+                    <span>Phan tich</span>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="header-left">
+                    <h1 id="pageTitle">Tong quan he thong</h1>
+                    <p style="color: var(--text-muted); font-size: 14px" id="currentDate">Loading...</p>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" placeholder="Tim kiem...">
+                    </div>
+                    <button class="btn btn-primary" id="refreshBtn">
+                        <i data-lucide="refresh-cw"></i>
+                        Cap nhat
+                    </button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard" class="page-section" style="display: block">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon revenue">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalRevenue">0d</h3>
+                            <p>Tong doanh thu</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orders">
+                            <i data-lucide="shopping-bag"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalOrders">0</h3>
+                            <p>Tong don hang</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon products">
+                            <i data-lucide="package"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalProducts">0</h3>
+                            <p>Tong san pham</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon customers">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalCustomers">0</h3>
+                            <p>Tong khach hang</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px">
+                    <div class="table-container">
+                        <h3 style="padding: 20px; font-weight: 700">Don hang gan day</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Ma don</th>
+                                    <th>Khach hang</th>
+                                    <th>Ngay dat</th>
+                                    <th>Tong tien</th>
+                                    <th>Trang thai</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTableBody">
+                                <tr><td colspan="5" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="background: white; padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm)">
+                        <h3 style="font-weight: 700; margin-bottom: 16px">Xu huong doanh thu</h3>
+                        <canvas id="dashboardRevenueChart" height="200"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRODUCTS SECTION -->
+            <section id="products" class="page-section">
+                <div class="page-header">
+                    <h2>Danh sach san pham</h2>
+                    <button class="btn btn-primary" id="addProductBtn">
+                        <i data-lucide="plus"></i>
+                        Them san pham
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Ten san pham</th>
+                                <th>Danh muc</th>
+                                <th>Gia ban</th>
+                                <th>Ton kho</th>
+                                <th>Trang thai</th>
+                                <th>Thao tac</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr><td colspan="7" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ORDERS SECTION -->
+            <section id="orders" class="page-section">
+                <div class="page-header">
+                    <h2>Quan ly don hang</h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ma don</th>
+                                <th>Ngay</th>
+                                <th>Khach hang</th>
+                                <th>Tong tien</th>
+                                <th>Thanh toan</th>
+                                <th>Trang thai</th>
+                                <th>Chi tiet</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <tr><td colspan="7" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CUSTOMERS SECTION -->
+            <section id="customers" class="page-section">
+                <div class="page-header">
+                    <h2>Danh sach khach hang</h2>
+                    <button class="btn btn-primary" id="addCustomerBtn">
+                        <i data-lucide="user-plus"></i>
+                        Them khach hang
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ho ten</th>
+                                <th>SDT</th>
+                                <th>Dia chi</th>
+                                <th>Nhom</th>
+                                <th>Tong chi tieu</th>
+                                <th>Cong no</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTableBody">
+                            <tr><td colspan="7" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SAMPLES SECTION -->
+            <section id="samples" class="page-section">
+                <div class="page-header">
+                    <h2>Quan ly hang mau</h2>
+                    <button class="btn btn-primary" id="addSampleBtn">
+                        <i data-lucide="gift"></i>
+                        Gui hang mau
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ngay gui</th>
+                                <th>Khach hang</th>
+                                <th>SKU</th>
+                                <th>Ten san pham</th>
+                                <th>So luong</th>
+                                <th>Ghi chu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="samplesTableBody">
+                            <tr><td colspan="6" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CASH FLOW SECTION -->
+            <section id="cashflow" class="page-section">
+                <div class="page-header">
+                    <h2>Quan ly dong tien</h2>
+                </div>
+                
+                <div style="background: white; padding: 32px; border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: var(--shadow-sm)">
+                    <h3 style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px">SO DU HIEN TAI</h3>
+                    <h2 style="font-size: 36px; font-weight: 800; color: var(--success)" id="currentBalance">0d</h2>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ngay</th>
+                                <th>Loai</th>
+                                <th>Hang muc</th>
+                                <th>So tien</th>
+                                <th>Tai khoan</th>
+                                <th>Mo ta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cashflowTableBody">
+                            <tr><td colspan="6" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ANALYTICS SECTION -->
+            <section id="analytics" class="page-section">
+                <div class="page-header">
+                    <h2>Bao cao & Phan tich</h2>
+                </div>
+                <p style="text-align: center; padding: 60px; color: var(--text-muted)">Chuc nang dang phat trien</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Add Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Them san pham moi</h3>
+                <button class="modal-close" onclick="closeModal('productModal')">&times;</button>
+            </div>
+            <form id="productForm">
+                <div class="form-group">
+                    <label>Ten san pham *</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU *</label>
+                    <input type="text" id="productSKU" required>
+                </div>
+                <div class="form-group">
+                    <label>Gia ban *</label>
+                    <input type="number" id="productSalePrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Trang thai</label>
+                    <select id="productStatus">
+                        <option value="Dang ban">Dang ban</option>
+                        <option value="Ngung ban">Ngung ban</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Huy</button>
+                    <button type="submit" class="btn btn-primary">Them san pham</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Sample Modal -->
+    <div id="sampleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Gui hang mau</h3>
+                <button class="modal-close" onclick="closeModal('sampleModal')">&times;</button>
+            </div>
+            <form id="sampleForm">
+                <div class="form-group">
+                    <label>Khach hang *</label>
+                    <select id="sampleCustomer" required>
+                        <option>Dang tai...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>San pham *</label>
+                    <select id="sampleSKU" required>
+                        <option>Dang tai...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>So luong *</label>
+                    <input type="number" id="sampleQuantity" value="1" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chu</label>
+                    <textarea id="sampleNote" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('sampleModal')">Huy</button>
+                    <button type="submit" class="btn btn-primary">Gui hang mau</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Them khach hang moi</h3>
+                <button class="modal-close" onclick="closeModal('customerModal')">&times;</button>
+            </div>
+            <form id="customerForm">
+                <div class="form-group">
+                    <label>Ho ten *</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label>So dien thoai *</label>
+                    <input type="tel" id="customerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>Dia chi</label>
+                    <input type="text" id="customerAddress">
+                </div>
+                <div class="form-group">
+                    <label>Nhom khach hang</label>
+                    <select id="customerGroup">
+                        <option value="Khach le">Khach le</option>
+                        <option value="Khach si">Khach si</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('customerModal')">Huy</button>
+                    <button type="submit" class="btn btn-primary">Them khach hang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
