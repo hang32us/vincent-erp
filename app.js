@@ -664,45 +664,92 @@ function showNotification(message, type = 'info') {
 //  11. INITIALIZATION
 // ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Loaded - Initializing...');
+    
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+        console.log('Lucide icons initialized');
     }
 
     // Set current date
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('vi-VN', options);
+    const currentDateEl = document.getElementById('currentDate');
+    if (currentDateEl) {
+        currentDateEl.innerText = new Date().toLocaleDateString('vi-VN', options);
+    }
 
     // Language switcher
-    document.getElementById('languageSwitcher').addEventListener('change', function() {
-        currentLang = this.value;
-        updateLanguage();
-    });
-
-    // Navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const pageName = item.getAttribute('data-page');
-            switchPage(pageName);
+    const langSwitcher = document.getElementById('languageSwitcher');
+    if (langSwitcher) {
+        langSwitcher.addEventListener('change', function() {
+            currentLang = this.value;
+            updateLanguage();
+            console.log('Language changed to:', currentLang);
         });
+    }
+
+    // Navigation - FIX: Thêm log và check elements
+    const navItems = document.querySelectorAll('.nav-item');
+    console.log('Found nav items:', navItems.length);
+    
+    navItems.forEach((item, index) => {
+        console.log(`Nav item ${index}:`, item.getAttribute('data-page'));
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const pageName = this.getAttribute('data-page');
+            console.log('Clicked nav item:', pageName);
+            if (pageName) {
+                switchPage(pageName);
+            }
+        });
+        // Đảm bảo cursor pointer
+        item.style.cursor = 'pointer';
     });
 
     // Refresh button
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-        const currentPage = document.querySelector('.nav-item.active').getAttribute('data-page');
-        loadPageData(currentPage);
-        showNotification('Dữ liệu đã được cập nhật', 'success');
-    });
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            const activeNav = document.querySelector('.nav-item.active');
+            if (activeNav) {
+                const currentPage = activeNav.getAttribute('data-page');
+                loadPageData(currentPage);
+                showNotification('Dữ liệu đã được cập nhật', 'success');
+            }
+        });
+    }
 
     // Modal triggers
-    document.getElementById('addProductBtn')?.addEventListener('click', () => openModal('productModal'));
-    document.getElementById('addSampleBtn')?.addEventListener('click', () => openModal('sampleModal'));
-    document.getElementById('addCustomerBtn')?.addEventListener('click', () => openModal('customerModal'));
+    const addProductBtn = document.getElementById('addProductBtn');
+    const addSampleBtn = document.getElementById('addSampleBtn');
+    const addCustomerBtn = document.getElementById('addCustomerBtn');
+    
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', () => openModal('productModal'));
+    }
+    if (addSampleBtn) {
+        addSampleBtn.addEventListener('click', () => openModal('sampleModal'));
+    }
+    if (addCustomerBtn) {
+        addCustomerBtn.addEventListener('click', () => openModal('customerModal'));
+    }
 
     // Form submissions
-    document.getElementById('productForm')?.addEventListener('submit', handleProductFormSubmit);
-    document.getElementById('sampleForm')?.addEventListener('submit', handleSampleFormSubmit);
-    document.getElementById('customerForm')?.addEventListener('submit', handleCustomerFormSubmit);
+    const productForm = document.getElementById('productForm');
+    const sampleForm = document.getElementById('sampleForm');
+    const customerForm = document.getElementById('customerForm');
+    
+    if (productForm) {
+        productForm.addEventListener('submit', handleProductFormSubmit);
+    }
+    if (sampleForm) {
+        sampleForm.addEventListener('submit', handleSampleFormSubmit);
+    }
+    if (customerForm) {
+        customerForm.addEventListener('submit', handleCustomerFormSubmit);
+    }
 
     // Close modals on outside click
     document.querySelectorAll('.modal').forEach(modal => {
@@ -714,6 +761,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial load
+    console.log('Loading initial language and page...');
     updateLanguage();
     switchPage('dashboard');
+    console.log('Initialization complete!');
 });
