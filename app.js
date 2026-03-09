@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHandlers();
     navigateTo('dashboard');
     lucide.createIcons();
-    
+
     // Prefetch common pages in background after 2 seconds
     setTimeout(() => prefetchData(), 2000);
 });
@@ -57,7 +57,7 @@ function initNavigation() {
 
 function navigateTo(page) {
     state.currentPage = page;
-    
+
     // 1. UPDATE UI IMMEDIATELY (no waiting for data)
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
@@ -82,7 +82,7 @@ function navigateTo(page) {
 
     // 3. LOAD DATA (use cache if available, show skeleton while loading)
     loadPageDataOptimized(page);
-    
+
     // 4. RENDER ICONS ONLY FOR VISIBLE SECTION (faster)
     setTimeout(() => {
         if (target) {
@@ -113,23 +113,23 @@ function loadPageDataOptimized(page) {
 
     // Load data with cache
     switch (page) {
-        case 'dashboard': 
-            loadDashboardData(true); 
+        case 'dashboard':
+            loadDashboardData(true);
             break;
-        case 'products': 
-            loadProductsData(true); 
+        case 'products':
+            loadProductsData(true);
             break;
-        case 'orders': 
-            loadOrdersData(true); 
+        case 'orders':
+            loadOrdersData(true);
             break;
-        case 'customers': 
-            loadCustomersData(true); 
+        case 'customers':
+            loadCustomersData(true);
             break;
-        case 'samples': 
-            loadSamplesData(true); 
+        case 'samples':
+            loadSamplesData(true);
             break;
-        case 'cashflow': 
-            loadCashFlowData(true); 
+        case 'cashflow':
+            loadCashFlowData(true);
             break;
     }
 }
@@ -156,7 +156,7 @@ function showSkeletonForPage(page) {
         orders: `<tr><td colspan="7"><div class="skeleton-loader"><div class="skeleton-line"></div></div></td></tr>`,
         customers: `<tr><td colspan="7"><div class="skeleton-loader"><div class="skeleton-line"></div></div></td></tr>`,
     };
-    
+
     const tbody = document.getElementById(`${page}TableBody`);
     if (tbody && skeletons[page]) {
         tbody.innerHTML = skeletons[page];
@@ -169,13 +169,13 @@ function showSkeletonForPage(page) {
 
 async function prefetchData() {
     console.log('🚀 Prefetching common pages...');
-    
+
     for (const page of state.prefetchQueue) {
         if (!state.dataLoaded[page]) {
             await callAPI(`get${page.charAt(0).toUpperCase() + page.slice(1)}`, 'POST', null, true);
         }
     }
-    
+
     console.log('✅ Prefetch completed');
 }
 
@@ -265,7 +265,7 @@ async function loadDashboardData(useCache = true) {
 
     renderRecentOrders(res.recentOrders || []);
     renderDashboardChart(res.revenueTrend || []);
-    
+
     state.dataLoaded.dashboard = true;
 }
 
@@ -289,9 +289,9 @@ async function loadProductsData(useCache = true) {
             </td>
         </tr>
     `).join('');
-    
+
     state.dataLoaded.products = true;
-    
+
     // Render icons only for this table
     setTimeout(() => lucide.createIcons(), 0);
 }
@@ -299,10 +299,10 @@ async function loadProductsData(useCache = true) {
 async function loadOrdersData(useCache = true) {
     const res = await callAPI('getOrders', 'POST', null, useCache);
     if (!res.success) return;
-    
+
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = res.orders.map(o => `
         <tr>
             <td style="font-weight:700">#${o.id}</td>
@@ -314,7 +314,7 @@ async function loadOrdersData(useCache = true) {
             <td><button class="btn btn-sm btn-secondary"><i data-lucide="eye"></i></button></td>
         </tr>
     `).join('');
-    
+
     state.dataLoaded.orders = true;
     setTimeout(() => lucide.createIcons(), 0);
 }
@@ -322,10 +322,10 @@ async function loadOrdersData(useCache = true) {
 async function loadCustomersData(useCache = true) {
     const res = await callAPI('getCustomers', 'POST', null, useCache);
     if (!res.success) return;
-    
+
     const tbody = document.getElementById('customersTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = res.customers.map(c => `
         <tr>
             <td style="font-weight:700">${c.id}</td>
@@ -337,17 +337,17 @@ async function loadCustomersData(useCache = true) {
             <td style="font-weight:700; color:${c.debt > 0 ? 'var(--danger)' : 'var(--success)'}">${formatCurrency(c.debt)}</td>
         </tr>
     `).join('');
-    
+
     state.dataLoaded.customers = true;
 }
 
 async function loadSamplesData(useCache = true) {
     const res = await callAPI('getSamples', 'POST', null, useCache);
     if (!res.success) return;
-    
+
     const tbody = document.getElementById('samplesTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = res.samples.map(s => `
         <tr>
             <td>${new Date(s.date).toLocaleDateString('vi-VN')}</td>
@@ -358,17 +358,17 @@ async function loadSamplesData(useCache = true) {
             <td style="color:var(--text-muted)">${s.note || '-'}</td>
         </tr>
     `).join('');
-    
+
     state.dataLoaded.samples = true;
 }
 
 async function loadCashFlowData(useCache = true) {
     const res = await callAPI('getCashFlow', 'POST', null, useCache);
     if (!res.success) return;
-    
+
     const tbody = document.getElementById('cashflowTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = res.transactions.reverse().map(t => `
         <tr>
             <td>${new Date(t.date).toLocaleDateString('vi-VN')}</td>
@@ -379,7 +379,7 @@ async function loadCashFlowData(useCache = true) {
             <td>${t.description}</td>
         </tr>
     `).join('');
-    
+
     document.getElementById('currentBalance').innerText = formatCurrency(res.balance || 0);
     state.dataLoaded.cashflow = true;
 }
@@ -485,9 +485,9 @@ function initHandlers() {
 
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function showLoading(show) { 
+function showLoading(show) {
     const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = show ? 'flex' : 'none'; 
+    if (overlay) overlay.style.display = show ? 'flex' : 'none';
 }
 
 function showNotification(msg, type) {
