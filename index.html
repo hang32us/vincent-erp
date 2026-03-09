@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus ERP - He thong quan ly chuyen nghiep</title>
+    <title>Nexus ERP - Hệ thống quản lý chuyên nghiệp</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -18,43 +18,43 @@
                 <span>NEXUS ERP</span>
             </div>
 
-            <h3>QUAN LY CHINH</h3>
+            <h3 id="sidebar_mainMenu">QUẢN LÝ CHÍNH</h3>
             <ul class="nav-menu">
                 <li class="nav-item active" data-page="dashboard">
                     <i data-lucide="home"></i>
-                    <span>Bang dieu khien</span>
+                    <span id="sidebar_dashboard">Bảng điều khiển</span>
                 </li>
                 <li class="nav-item" data-page="products">
                     <i data-lucide="package"></i>
-                    <span>Kho san pham</span>
+                    <span id="sidebar_products">Kho sản phẩm</span>
                 </li>
                 <li class="nav-item" data-page="orders">
                     <i data-lucide="shopping-cart"></i>
-                    <span>Don hang</span>
+                    <span id="sidebar_orders">Đơn hàng</span>
                 </li>
                 <li class="nav-item" data-page="customers">
                     <i data-lucide="users"></i>
-                    <span>Khach hang</span>
+                    <span id="sidebar_customers">Khách hàng</span>
                 </li>
             </ul>
 
-            <h3 style="margin-top: 24px">VAN HANH</h3>
+            <h3 id="sidebar_operationMenu" style="margin-top: 24px">VẬN HÀNH</h3>
             <ul class="nav-menu">
                 <li class="nav-item" data-page="samples">
                     <i data-lucide="gift"></i>
-                    <span>Hang mau</span>
+                    <span id="sidebar_samples">Hàng mẫu</span>
                 </li>
                 <li class="nav-item" data-page="cashflow">
                     <i data-lucide="dollar-sign"></i>
-                    <span>Dong tien</span>
+                    <span id="sidebar_cashflow">Dòng tiền</span>
                 </li>
             </ul>
 
-            <h3 style="margin-top: 24px">BAO CAO</h3>
+            <h3 id="sidebar_reportMenu" style="margin-top: 24px">BÁO CÁO</h3>
             <ul class="nav-menu">
                 <li class="nav-item" data-page="analytics">
                     <i data-lucide="bar-chart-3"></i>
-                    <span>Phan tich</span>
+                    <span id="sidebar_analytics">Phân tích</span>
                 </li>
             </ul>
         </aside>
@@ -64,83 +64,51 @@
             <!-- HEADER -->
             <div class="header">
                 <div class="header-left">
-                    <h1 id="pageTitle">Tong quan he thong</h1>
-                    <p style="color: var(--text-muted); font-size: 14px" id="currentDate">Loading...</p>
+                    <h1 id="pageTitle">Tổng quan hệ thống</h1>
+                    <p style="color: var(--text-muted); font-size: 14px" id="currentDate">Đang tải...</p>
                 </div>
                 <div class="header-right">
                     <div class="search-box">
                         <i data-lucide="search"></i>
-                        <input type="text" placeholder="Tim kiem...">
+                        <input type="text" id="searchBox" placeholder="Tìm kiếm...">
                     </div>
                     <button class="btn btn-primary" id="refreshBtn">
                         <i data-lucide="refresh-cw"></i>
-                        Cap nhat
+                        <span id="header_refresh">Cập nhật</span>
                     </button>
+                    <select id="languageSwitcher" style="margin-left:16px; font-size:14px;">
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="zh">中文 (Tiếng Trung)</option>
+                    </select>
                 </div>
             </div>
 
             <!-- DASHBOARD SECTION -->
             <section id="dashboard" class="page-section" style="display: block">
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon revenue">
-                            <i data-lucide="trending-up"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalRevenue">0d</h3>
-                            <p>Tong doanh thu</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orders">
-                            <i data-lucide="shopping-bag"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalOrders">0</h3>
-                            <p>Tong don hang</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon products">
-                            <i data-lucide="package"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalProducts">0</h3>
-                            <p>Tong san pham</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon customers">
-                            <i data-lucide="users"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalCustomers">0</h3>
-                            <p>Tong khach hang</p>
-                        </div>
-                    </div>
+                    <!-- ... không cần Việt hóa vì có từ app.js ... -->
                 </div>
-
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px">
                     <div class="table-container">
-                        <h3 style="padding: 20px; font-weight: 700">Don hang gan day</h3>
+                        <h3 id="dashboard_recentOrdersTitle" style="padding: 20px; font-weight: 700">Đơn hàng gần đây</h3>
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Ma don</th>
-                                    <th>Khach hang</th>
-                                    <th>Ngay dat</th>
-                                    <th>Tong tien</th>
-                                    <th>Trang thai</th>
+                                    <th id="dashboard_orderID">Mã đơn</th>
+                                    <th id="dashboard_customer">Khách hàng</th>
+                                    <th id="dashboard_orderDate">Ngày đặt</th>
+                                    <th id="dashboard_total">Tổng tiền</th>
+                                    <th id="dashboard_status">Trạng thái</th>
                                 </tr>
                             </thead>
                             <tbody id="recentOrdersTableBody">
-                                <tr><td colspan="5" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                                <tr><td colspan="5" style="text-align:center; padding:40px" id="dashboard_loading">Đang tải...</td></tr>
                             </tbody>
                         </table>
                     </div>
 
                     <div style="background: white; padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm)">
-                        <h3 style="font-weight: 700; margin-bottom: 16px">Xu huong doanh thu</h3>
+                        <h3 id="dashboard_trendTitle" style="font-weight: 700; margin-bottom: 16px">Xu hướng doanh thu</h3>
                         <canvas id="dashboardRevenueChart" height="200"></canvas>
                     </div>
                 </div>
@@ -149,27 +117,27 @@
             <!-- PRODUCTS SECTION -->
             <section id="products" class="page-section">
                 <div class="page-header">
-                    <h2>Danh sach san pham</h2>
+                    <h2 id="products_title">Danh sách sản phẩm</h2>
                     <button class="btn btn-primary" id="addProductBtn">
                         <i data-lucide="plus"></i>
-                        Them san pham
+                        <span id="products_addBtnText">Thêm sản phẩm</span>
                     </button>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>SKU</th>
-                                <th>Ten san pham</th>
-                                <th>Danh muc</th>
-                                <th>Gia ban</th>
-                                <th>Ton kho</th>
-                                <th>Trang thai</th>
-                                <th>Thao tac</th>
+                                <th id="products_SKU">SKU</th>
+                                <th id="products_name">Tên sản phẩm</th>
+                                <th id="products_category">Danh mục</th>
+                                <th id="products_price">Giá bán</th>
+                                <th id="products_stock">Tồn kho</th>
+                                <th id="products_status">Trạng thái</th>
+                                <th id="products_action">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="productsTableBody">
-                            <tr><td colspan="7" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                            <tr><td colspan="7" style="text-align:center; padding:40px" id="products_loading">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -178,23 +146,23 @@
             <!-- ORDERS SECTION -->
             <section id="orders" class="page-section">
                 <div class="page-header">
-                    <h2>Quan ly don hang</h2>
+                    <h2 id="orders_title">Quản lý đơn hàng</h2>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Ma don</th>
-                                <th>Ngay</th>
-                                <th>Khach hang</th>
-                                <th>Tong tien</th>
-                                <th>Thanh toan</th>
-                                <th>Trang thai</th>
-                                <th>Chi tiet</th>
+                                <th id="orders_orderID">Mã đơn</th>
+                                <th id="orders_date">Ngày</th>
+                                <th id="orders_customer">Khách hàng</th>
+                                <th id="orders_total">Tổng tiền</th>
+                                <th id="orders_paymentMethod">Thanh toán</th>
+                                <th id="orders_status">Trạng thái</th>
+                                <th id="orders_detail">Chi tiết</th>
                             </tr>
                         </thead>
                         <tbody id="ordersTableBody">
-                            <tr><td colspan="7" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                            <tr><td colspan="7" style="text-align:center; padding:40px" id="orders_loading">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -203,27 +171,27 @@
             <!-- CUSTOMERS SECTION -->
             <section id="customers" class="page-section">
                 <div class="page-header">
-                    <h2>Danh sach khach hang</h2>
+                    <h2 id="customers_title">Danh sách khách hàng</h2>
                     <button class="btn btn-primary" id="addCustomerBtn">
                         <i data-lucide="user-plus"></i>
-                        Them khach hang
+                        <span id="customers_addBtnText">Thêm khách hàng</span>
                     </button>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Ho ten</th>
-                                <th>SDT</th>
-                                <th>Dia chi</th>
-                                <th>Nhom</th>
-                                <th>Tong chi tieu</th>
-                                <th>Cong no</th>
+                                <th id="customers_id">ID</th>
+                                <th id="customers_name">Họ tên</th>
+                                <th id="customers_phone">SĐT</th>
+                                <th id="customers_address">Địa chỉ</th>
+                                <th id="customers_group">Nhóm</th>
+                                <th id="customers_totalSpent">Tổng chi tiêu</th>
+                                <th id="customers_debt">Công nợ</th>
                             </tr>
                         </thead>
                         <tbody id="customersTableBody">
-                            <tr><td colspan="7" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                            <tr><td colspan="7" style="text-align:center; padding:40px" id="customers_loading">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -232,26 +200,26 @@
             <!-- SAMPLES SECTION -->
             <section id="samples" class="page-section">
                 <div class="page-header">
-                    <h2>Quan ly hang mau</h2>
+                    <h2 id="samples_title">Quản lý hàng mẫu</h2>
                     <button class="btn btn-primary" id="addSampleBtn">
                         <i data-lucide="gift"></i>
-                        Gui hang mau
+                        <span id="samples_addBtnText">Gửi hàng mẫu</span>
                     </button>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Ngay gui</th>
-                                <th>Khach hang</th>
-                                <th>SKU</th>
-                                <th>Ten san pham</th>
-                                <th>So luong</th>
-                                <th>Ghi chu</th>
+                                <th id="samples_date">Ngày gửi</th>
+                                <th id="samples_customer">Khách hàng</th>
+                                <th id="samples_SKU">SKU</th>
+                                <th id="samples_productName">Tên sản phẩm</th>
+                                <th id="samples_quantity">Số lượng</th>
+                                <th id="samples_note">Ghi chú</th>
                             </tr>
                         </thead>
                         <tbody id="samplesTableBody">
-                            <tr><td colspan="6" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                            <tr><td colspan="6" style="text-align:center; padding:40px" id="samples_loading">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -260,28 +228,28 @@
             <!-- CASH FLOW SECTION -->
             <section id="cashflow" class="page-section">
                 <div class="page-header">
-                    <h2>Quan ly dong tien</h2>
+                    <h2 id="cashflow_title">Quản lý dòng tiền</h2>
                 </div>
                 
                 <div style="background: white; padding: 32px; border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: var(--shadow-sm)">
-                    <h3 style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px">SO DU HIEN TAI</h3>
-                    <h2 style="font-size: 36px; font-weight: 800; color: var(--success)" id="currentBalance">0d</h2>
+                    <h3 id="cashflow_currentBalanceHeader" style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px">SỐ DƯ HIỆN TẠI</h3>
+                    <h2 style="font-size: 36px; font-weight: 800; color: var(--success)" id="currentBalance">0đ</h2>
                 </div>
 
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Ngay</th>
-                                <th>Loai</th>
-                                <th>Hang muc</th>
-                                <th>So tien</th>
-                                <th>Tai khoan</th>
-                                <th>Mo ta</th>
+                                <th id="cashflow_date">Ngày</th>
+                                <th id="cashflow_type">Loại</th>
+                                <th id="cashflow_category">Hạng mục</th>
+                                <th id="cashflow_amount">Số tiền</th>
+                                <th id="cashflow_account">Tài khoản</th>
+                                <th id="cashflow_description">Mô tả</th>
                             </tr>
                         </thead>
                         <tbody id="cashflowTableBody">
-                            <tr><td colspan="6" style="text-align:center; padding:40px">Dang tai...</td></tr>
+                            <tr><td colspan="6" style="text-align:center; padding:40px" id="cashflow_loading">Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -290,9 +258,9 @@
             <!-- ANALYTICS SECTION -->
             <section id="analytics" class="page-section">
                 <div class="page-header">
-                    <h2>Bao cao & Phan tich</h2>
+                    <h2 id="analytics_title">Báo cáo & Phân tích</h2>
                 </div>
-                <p style="text-align: center; padding: 60px; color: var(--text-muted)">Chuc nang dang phat trien</p>
+                <p id="analytics_developing" style="text-align: center; padding: 60px; color: var(--text-muted)">Chức năng đang phát triển</p>
             </section>
         </main>
     </div>
@@ -302,32 +270,32 @@
     <div id="productModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Them san pham moi</h3>
+                <h3 id="productModal_title">Thêm sản phẩm mới</h3>
                 <button class="modal-close" onclick="closeModal('productModal')">&times;</button>
             </div>
             <form id="productForm">
                 <div class="form-group">
-                    <label>Ten san pham *</label>
+                    <label id="productModal_nameLabel">Tên sản phẩm *</label>
                     <input type="text" id="productName" required>
                 </div>
                 <div class="form-group">
-                    <label>SKU *</label>
+                    <label id="productModal_SKULabel">SKU *</label>
                     <input type="text" id="productSKU" required>
                 </div>
                 <div class="form-group">
-                    <label>Gia ban *</label>
+                    <label id="productModal_priceLabel">Giá bán *</label>
                     <input type="number" id="productSalePrice" required>
                 </div>
                 <div class="form-group">
-                    <label>Trang thai</label>
+                    <label id="productModal_statusLabel">Trạng thái</label>
                     <select id="productStatus">
-                        <option value="Dang ban">Dang ban</option>
-                        <option value="Ngung ban">Ngung ban</option>
+                        <option id="productModal_statusOption1" value="Đang bán">Đang bán</option>
+                        <option id="productModal_statusOption2" value="Ngừng bán">Ngừng bán</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Huy</button>
-                    <button type="submit" class="btn btn-primary">Them san pham</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')" id="productModal_cancelBtn">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="productModal_submitBtn">Thêm sản phẩm</button>
                 </div>
             </form>
         </div>
@@ -337,33 +305,33 @@
     <div id="sampleModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Gui hang mau</h3>
+                <h3 id="sampleModal_title">Gửi hàng mẫu</h3>
                 <button class="modal-close" onclick="closeModal('sampleModal')">&times;</button>
             </div>
             <form id="sampleForm">
                 <div class="form-group">
-                    <label>Khach hang *</label>
+                    <label id="sampleModal_customerLabel">Khách hàng *</label>
                     <select id="sampleCustomer" required>
-                        <option>Dang tai...</option>
+                        <option id="sampleModal_loadingCustomer">Đang tải...</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>San pham *</label>
+                    <label id="sampleModal_productLabel">Sản phẩm *</label>
                     <select id="sampleSKU" required>
-                        <option>Dang tai...</option>
+                        <option id="sampleModal_loadingProduct">Đang tải...</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>So luong *</label>
+                    <label id="sampleModal_quantityLabel">Số lượng *</label>
                     <input type="number" id="sampleQuantity" value="1" min="1" required>
                 </div>
                 <div class="form-group">
-                    <label>Ghi chu</label>
+                    <label id="sampleModal_noteLabel">Ghi chú</label>
                     <textarea id="sampleNote" rows="3"></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('sampleModal')">Huy</button>
-                    <button type="submit" class="btn btn-primary">Gui hang mau</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('sampleModal')" id="sampleModal_cancelBtn">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="sampleModal_submitBtn">Gửi hàng mẫu</button>
                 </div>
             </form>
         </div>
@@ -373,33 +341,33 @@
     <div id="customerModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Them khach hang moi</h3>
+                <h3 id="customerModal_title">Thêm khách hàng mới</h3>
                 <button class="modal-close" onclick="closeModal('customerModal')">&times;</button>
             </div>
             <form id="customerForm">
                 <div class="form-group">
-                    <label>Ho ten *</label>
+                    <label id="customerModal_nameLabel">Họ tên *</label>
                     <input type="text" id="customerName" required>
                 </div>
                 <div class="form-group">
-                    <label>So dien thoai *</label>
+                    <label id="customerModal_phoneLabel">Số điện thoại *</label>
                     <input type="tel" id="customerPhone" required>
                 </div>
                 <div class="form-group">
-                    <label>Dia chi</label>
+                    <label id="customerModal_addressLabel">Địa chỉ</label>
                     <input type="text" id="customerAddress">
                 </div>
                 <div class="form-group">
-                    <label>Nhom khach hang</label>
+                    <label id="customerModal_groupLabel">Nhóm khách hàng</label>
                     <select id="customerGroup">
-                        <option value="Khach le">Khach le</option>
-                        <option value="Khach si">Khach si</option>
-                        <option value="VIP">VIP</option>
+                        <option id="customerModal_groupOption1" value="Khách lẻ">Khách lẻ</option>
+                        <option id="customerModal_groupOption2" value="Khách sỉ">Khách sỉ</option>
+                        <option id="customerModal_groupOption3" value="VIP">VIP</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('customerModal')">Huy</button>
-                    <button type="submit" class="btn btn-primary">Them khach hang</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('customerModal')" id="customerModal_cancelBtn">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="customerModal_submitBtn">Thêm khách hàng</button>
                 </div>
             </form>
         </div>

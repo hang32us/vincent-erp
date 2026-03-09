@@ -1,571 +1,235 @@
-/**
- * ════════════════════════════════════════════════════════════════
- * NEXUS ERP - MAIN APPLICATION LOGIC (OPTIMIZED VERSION)
- * Version: 3.6 Speed Optimized
- * ════════════════════════════════════════════════════════════════
- */
-
-const CONFIG = {
-    API_URL: "https://script.google.com/macros/s/AKfycbxGaVvaSVSpUiW3BXVKdOQ3-g2XXbtQP-u830UZUT4eFaSgyySFlVU1vkINDb8goho/exec",
-    REFRESH_INTERVAL: 60000,
-};
-
-const state = {
-    currentPage: 'dashboard',
-    charts: {},
-    cache: {},
-    cacheDuration: 300000, // 5 minutes
-    dataLoaded: {}, // Track which pages have been loaded
-    prefetchQueue: ['products', 'customers'] // Prefetch these pages
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    initNavigation();
-    initDateTime();
-    initHandlers();
-    navigateTo('dashboard');
-    lucide.createIcons();
-
-    // Prefetch common pages in background after 2 seconds
-    setTimeout(() => prefetchData(), 2000);
-});
-
-function initDateTime() {
-    const update = () => {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const timeStr = now.toLocaleTimeString('vi-VN');
-        const elem = document.getElementById('currentDate');
-        if (elem) elem.innerText = `${dateStr} | ${timeStr}`;
-    };
-    update();
-    setInterval(update, 1000);
-}
-
-function initNavigation() {
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const page = item.getAttribute('data-page');
-            if (page) navigateTo(page);
-        });
-    });
-}
-
-// ═══════════════════════════════════════════════════════════════
-// OPTIMIZED NAVIGATION - INSTANT SWITCHING
-// ═══════════════════════════════════════════════════════════════
-
-function navigateTo(page) {
-    state.currentPage = page;
-
-    // 1. UPDATE UI IMMEDIATELY (no waiting for data)
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
-    if (activeNav) activeNav.classList.add('active');
-
-    const titleMap = {
-        dashboard: 'Tổng quan hệ thống',
-        products: 'Quản lý kho sản phẩm',
-        orders: 'Quản lý đơn hàng',
-        customers: 'Dữ liệu khách hàng',
-        inventory: 'Kiểm kê kho hàng',
-        samples: 'Hàng mẫu gửi đối tác',
-        analytics: 'Báo cáo & Phân tích',
-        cashflow: 'Quản lý dòng tiền'
-    };
-    document.getElementById('pageTitle').innerText = titleMap[page] || 'Trang chủ';
-
-    // 2. SWITCH SECTIONS INSTANTLY
-    document.querySelectorAll('.page-section').forEach(s => s.style.display = 'none');
-    const target = document.getElementById(page);
-    if (target) target.style.display = 'block';
-
-    // 3. LOAD DATA (use cache if available, show skeleton while loading)
-    loadPageDataOptimized(page);
-
-    // 4. RENDER ICONS ONLY FOR VISIBLE SECTION (faster)
-    setTimeout(() => {
-        if (target) {
-            const icons = target.querySelectorAll('[data-lucide]');
-            icons.forEach(icon => {
-                const iconName = icon.getAttribute('data-lucide');
-                if (iconName && !icon.querySelector('svg')) {
-                    lucide.createIcons({ attrs: { 'data-lucide': iconName } });
-                }
-            });
-        }
-    }, 0);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// OPTIMIZED DATA LOADING WITH CACHE & SKELETON
-// ═══════════════════════════════════════════════════════════════
-
-function loadPageDataOptimized(page) {
-    // Check if data already loaded and cached
-    if (state.dataLoaded[page] && isCacheValid(page)) {
-        console.log(`✅ Using cached data for ${page}`);
-        return; // Don't reload, use existing DOM
-    }
-
-    // Show skeleton/loading state
-    showSkeletonForPage(page);
-
-    // Load data with cache
-    switch (page) {
-        case 'dashboard':
-            loadDashboardData(true);
-            break;
-        case 'products':
-            loadProductsData(true);
-            break;
-        case 'orders':
-            loadOrdersData(true);
-            break;
-        case 'customers':
-            loadCustomersData(true);
-            break;
-        case 'samples':
-            loadSamplesData(true);
-            break;
-        case 'cashflow':
-            loadCashFlowData(true);
-            break;
-    }
-}
-
-function isCacheValid(page) {
-    const cacheKey = `get${page.charAt(0).toUpperCase() + page.slice(1)}`;
-    const cached = state.cache[cacheKey];
-    if (!cached) return false;
-    return (Date.now() - cached.timestamp) < state.cacheDuration;
-}
-
-function showSkeletonForPage(page) {
-    // Show loading skeleton instead of "Dang tai..."
-    const skeletons = {
-        products: `
-            <tr><td colspan="7">
-                <div class="skeleton-loader">
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                </div>
-            </td></tr>
-        `,
-        orders: `<tr><td colspan="7"><div class="skeleton-loader"><div class="skeleton-line"></div></div></td></tr>`,
-        customers: `<tr><td colspan="7"><div class="skeleton-loader"><div class="skeleton-line"></div></div></td></tr>`,
-    };
-
-    const tbody = document.getElementById(`${page}TableBody`);
-    if (tbody && skeletons[page]) {
-        tbody.innerHTML = skeletons[page];
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// PREFETCH DATA FOR COMMON PAGES
-// ═══════════════════════════════════════════════════════════════
-
-async function prefetchData() {
-    console.log('🚀 Prefetching common pages...');
-
-    for (const page of state.prefetchQueue) {
-        if (!state.dataLoaded[page]) {
-            await callAPI(`get${page.charAt(0).toUpperCase() + page.slice(1)}`, 'POST', null, true);
-        }
-    }
-
-    console.log('✅ Prefetch completed');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// API CALL WITH ENHANCED CACHING
-// ═══════════════════════════════════════════════════════════════
-
-async function callAPI(action, method = 'POST', data = null, useCache = false) {
-    const cacheKey = action + (data ? JSON.stringify(data) : '');
-
-    // Return cached data if available and fresh
-    if (useCache && state.cache[cacheKey] && (Date.now() - state.cache[cacheKey].timestamp < state.cacheDuration)) {
-        console.log('📦 Cache hit:', action);
-        return state.cache[cacheKey].data;
-    }
-
-    // Only show global loading for non-cached calls
-    const isBackgroundCall = state.prefetchQueue.some(p => action.toLowerCase().includes(p));
-    if (!isBackgroundCall) {
-        showLoading(true);
-    }
-
-    try {
-        const url = CONFIG.API_URL;
-        const options = {
-            method: 'POST',
-            mode: 'cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action, ...data })
-        };
-
-        const response = await fetch(url, options);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const result = await response.json();
-        if (!result.success) throw new Error(result.error || 'Server error');
-
-        // Cache all GET requests
-        if (action.startsWith('get')) {
-            state.cache[cacheKey] = {
-                data: result,
-                timestamp: Date.now()
-            };
-        }
-
-        return result;
-    } catch (error) {
-        console.error('API Error:', error);
-        let errorMsg = 'Lỗi kết nối máy chủ.';
-        if (error.message.includes('fetch')) {
-            errorMsg = 'Không thể kết nối! Vui lòng kiểm tra lại URL API hoặc kết nối mạng.';
-        } else {
-            errorMsg += ' ' + error.message;
-        }
-        if (!isBackgroundCall) {
-            showNotification(errorMsg, 'error');
-        }
-        return { success: false };
-    } finally {
-        if (!isBackgroundCall) {
-            showLoading(false);
-        }
-    }
-}
-
-function invalidateCache(pattern) {
-    Object.keys(state.cache).forEach(key => {
-        if (key.includes(pattern)) {
-            delete state.cache[key];
-            delete state.dataLoaded[pattern];
-        }
-    });
-}
-
-// ═══════════════════════════════════════════════════════════════
-// DATA LOADERS (OPTIMIZED)
-// ═══════════════════════════════════════════════════════════════
-
-async function loadDashboardData(useCache = true) {
-    const res = await callAPI('getDashboard', 'POST', null, useCache);
-    if (!res.success) return;
-
-    animateValue('totalRevenue', 0, res.revenue || 0, 1000, true);
-    document.getElementById('totalOrders').innerText = res.ordersCount || 0;
-    document.getElementById('totalProducts').innerText = res.totalProducts || 0;
-    document.getElementById('totalCustomers').innerText = res.customersCount || 0;
-
-    renderRecentOrders(res.recentOrders || []);
-    renderDashboardChart(res.revenueTrend || []);
-
-    state.dataLoaded.dashboard = true;
-}
-
-async function loadProductsData(useCache = true) {
-    const res = await callAPI('getProducts', 'POST', null, useCache);
-    if (!res.success) return;
-
-    const tbody = document.getElementById('productsTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = res.products.map(p => `
-        <tr>
-            <td style="font-weight:700; color:var(--primary)">${p.sku}</td>
-            <td style="font-weight:600">${p.name}</td>
-            <td><span class="badge badge-warning">${p.category || 'Chưa phân loại'}</span></td>
-            <td style="font-weight:700">${formatCurrency(p.salePrice)}</td>
-            <td style="font-weight:800; color:${p.stock < 10 ? 'var(--danger)' : 'var(--success)'}">${p.stock}</td>
-            <td><span class="badge ${p.status === 'Đang bán' ? 'badge-success' : 'badge-danger'}">${p.status}</span></td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="editProduct('${p.sku}')"><i data-lucide="edit-3"></i></button>
-            </td>
-        </tr>
-    `).join('');
-
-    state.dataLoaded.products = true;
-
-    // Render icons only for this table
-    setTimeout(() => lucide.createIcons(), 0);
-}
-
-async function loadOrdersData(useCache = true) {
-    const res = await callAPI('getOrders', 'POST', null, useCache);
-    if (!res.success) return;
-
-    const tbody = document.getElementById('ordersTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = res.orders.map(o => `
-        <tr>
-            <td style="font-weight:700">#${o.id}</td>
-            <td>${new Date(o.date).toLocaleDateString('vi-VN')}</td>
-            <td>${o.customer}</td>
-            <td style="font-weight:700">${formatCurrency(o.total)}</td>
-            <td>${o.paymentMethod}</td>
-            <td><span class="badge badge-success">${o.status}</span></td>
-            <td><button class="btn btn-sm btn-secondary"><i data-lucide="eye"></i></button></td>
-        </tr>
-    `).join('');
-
-    state.dataLoaded.orders = true;
-    setTimeout(() => lucide.createIcons(), 0);
-}
-
-async function loadCustomersData(useCache = true) {
-    const res = await callAPI('getCustomers', 'POST', null, useCache);
-    if (!res.success) return;
-
-    const tbody = document.getElementById('customersTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = res.customers.map(c => `
-        <tr>
-            <td style="font-weight:700">${c.id}</td>
-            <td>${c.name}</td>
-            <td>${c.phone}</td>
-            <td>${c.address}</td>
-            <td><span class="badge badge-warning">${c.group}</span></td>
-            <td style="font-weight:700">${formatCurrency(c.totalSpent)}</td>
-            <td style="font-weight:700; color:${c.debt > 0 ? 'var(--danger)' : 'var(--success)'}">${formatCurrency(c.debt)}</td>
-        </tr>
-    `).join('');
-
-    state.dataLoaded.customers = true;
-}
-
-async function loadSamplesData(useCache = true) {
-    const res = await callAPI('getSamples', 'POST', null, useCache);
-    if (!res.success) return;
-
-    const tbody = document.getElementById('samplesTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = res.samples.map(s => `
-        <tr>
-            <td>${new Date(s.date).toLocaleDateString('vi-VN')}</td>
-            <td>${s.customer}</td>
-            <td style="font-weight:700; color:var(--primary)">${s.sku}</td>
-            <td>${s.productName}</td>
-            <td style="font-weight:700">${s.quantity}</td>
-            <td style="color:var(--text-muted)">${s.note || '-'}</td>
-        </tr>
-    `).join('');
-
-    state.dataLoaded.samples = true;
-}
-
-async function loadCashFlowData(useCache = true) {
-    const res = await callAPI('getCashFlow', 'POST', null, useCache);
-    if (!res.success) return;
-
-    const tbody = document.getElementById('cashflowTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = res.transactions.reverse().map(t => `
-        <tr>
-            <td>${new Date(t.date).toLocaleDateString('vi-VN')}</td>
-            <td><span class="badge ${t.type === 'Thu' ? 'badge-success' : 'badge-danger'}">${t.type}</span></td>
-            <td>${t.category}</td>
-            <td style="font-weight:700; color:${t.type === 'Thu' ? 'var(--success)' : 'var(--danger)'}">${formatCurrency(t.amount)}</td>
-            <td>${t.account}</td>
-            <td>${t.description}</td>
-        </tr>
-    `).join('');
-
-    document.getElementById('currentBalance').innerText = formatCurrency(res.balance || 0);
-    state.dataLoaded.cashflow = true;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// HANDLERS
-// ═══════════════════════════════════════════════════════════════
-
-function initHandlers() {
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-        invalidateCache(state.currentPage);
-        loadPageDataOptimized(state.currentPage);
-        showNotification('Đã cập nhật dữ liệu mới nhất.', 'info');
-    });
-
-    document.getElementById('addProductBtn').addEventListener('click', () => openModal('productModal'));
-
-    document.getElementById('productForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            name: document.getElementById('productName').value,
-            sku: document.getElementById('productSKU').value,
-            salePrice: document.getElementById('productSalePrice').value,
-            status: document.getElementById('productStatus').value
-        };
-        const res = await callAPI('createProduct', 'POST', data);
-        if (res.success) {
-            invalidateCache('getProducts');
-            invalidateCache('getDashboard');
-            showNotification('Thêm sản phẩm thành công!', 'success');
-            closeModal('productModal');
-            loadProductsData(false);
-        }
-    });
-
-    document.getElementById('addSampleBtn').addEventListener('click', async () => {
-        const productSelect = document.getElementById('sampleSKU');
-        const customerSelect = document.getElementById('sampleCustomer');
-
-        productSelect.innerHTML = '<option>Đang tải...</option>';
-        customerSelect.innerHTML = '<option>Đang tải...</option>';
-
-        openModal('sampleModal');
-
-        const [prodRes, custRes] = await Promise.all([
-            callAPI('getProducts', 'POST', null, true),
-            callAPI('getCustomers', 'POST', null, true)
-        ]);
-
-        if (prodRes.success) {
-            productSelect.innerHTML = prodRes.products.map(p =>
-                `<option value="${p.sku}">${p.name} (${p.sku}) - Tồn: ${p.stock}</option>`
-            ).join('');
-        }
-
-        if (custRes.success) {
-            customerSelect.innerHTML = '<option value="">-- Chọn khách hàng --</option>' +
-                custRes.customers.map(c => `<option value="${c.name}">${c.name} (${c.phone})</option>`).join('');
-        }
-    });
-
-    document.getElementById('sampleForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            customer: document.getElementById('sampleCustomer').value,
-            sku: document.getElementById('sampleSKU').value,
-            quantity: document.getElementById('sampleQuantity').value,
-            note: document.getElementById('sampleNote').value
-        };
-        const res = await callAPI('createSample', 'POST', data);
-        if (res.success) {
-            invalidateCache('getSamples');
-            showNotification('Gửi hàng mẫu thành công!', 'success');
-            closeModal('sampleModal');
-            loadSamplesData(false);
-        }
-    });
-
-    document.getElementById('addCustomerBtn').addEventListener('click', () => openModal('customerModal'));
-
-    document.getElementById('customerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            name: document.getElementById('customerName').value,
-            phone: document.getElementById('customerPhone').value,
-            address: document.getElementById('customerAddress').value,
-            group: document.getElementById('customerGroup').value
-        };
-        const res = await callAPI('createCustomer', 'POST', data);
-        if (res.success) {
-            invalidateCache('getCustomers');
-            invalidateCache('getDashboard');
-            showNotification('Thêm khách hàng thành công!', 'success');
-            closeModal('customerModal');
-            loadCustomersData(false);
-        }
-    });
-}
-
-// ═══════════════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════════════
-
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function showLoading(show) {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = show ? 'flex' : 'none';
-}
-
-function showNotification(msg, type) {
-    const toast = document.createElement('div');
-    toast.className = `notification show notification-${type}`;
-    toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i><span>${msg}</span>`;
-    document.body.appendChild(toast);
-    lucide.createIcons();
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 500);
-    }, 3000);
-}
-
-function formatCurrency(val) {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
-}
-
-function animateValue(id, start, end, duration, isCurrency = false) {
-    const obj = document.getElementById(id);
-    if (!obj) return;
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const val = Math.floor(progress * (end - start) + start);
-        obj.innerHTML = isCurrency ? formatCurrency(val) : val;
-        if (progress < 1) window.requestAnimationFrame(step);
-    };
-    window.requestAnimationFrame(step);
-}
-
-function renderDashboardChart(trend) {
-    const canvas = document.getElementById('dashboardRevenueChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (state.charts.revenue) state.charts.revenue.destroy();
-    state.charts.revenue = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: trend.map(t => t.date),
-            datasets: [{
-                data: trend.map(t => t.value),
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 4,
-                pointBackgroundColor: '#fff',
-                pointBorderWidth: 2
-            }]
+// Định nghĩa các nhãn Tiếng Việt & Tiếng Trung
+const LANGS = {
+    vi: {
+        sidebar: {
+            mainMenu: "QUẢN LÝ CHÍNH", operationMenu: "VẬN HÀNH", reportMenu: "BÁO CÁO",
+            dashboard: "Bảng điều khiển", products: "Kho sản phẩm", orders: "Đơn hàng",
+            customers: "Khách hàng", samples: "Hàng mẫu", cashflow: "Dòng tiền", analytics: "Phân tích"
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { display: false }, x: { grid: { display: false } } }
+        header: { refresh: "Cập nhật", search: "Tìm kiếm..." },
+        dashboard: {
+            recentOrdersTitle: "Đơn hàng gần đây", orderID: "Mã đơn", customer: "Khách hàng", orderDate: "Ngày đặt",
+            total: "Tổng tiền", status: "Trạng thái", loading: "Đang tải...", trendTitle: "Xu hướng doanh thu"
+        },
+        products: {
+            title: "Danh sách sản phẩm", addBtnText: "Thêm sản phẩm", SKU: "SKU", name: "Tên sản phẩm", category: "Danh mục",
+            price: "Giá bán", stock: "Tồn kho", status: "Trạng thái", action: "Thao tác", loading: "Đang tải..."
+        },
+        orders: {
+            title: "Quản lý đơn hàng", orderID: "Mã đơn", date: "Ngày", customer: "Khách hàng", total: "Tổng tiền",
+            paymentMethod: "Thanh toán", status: "Trạng thái", detail: "Chi tiết", loading: "Đang tải..."
+        },
+        customers: {
+            title: "Danh sách khách hàng", addBtnText: "Thêm khách hàng", id: "ID", name: "Họ tên", phone: "SĐT",
+            address: "Địa chỉ", group: "Nhóm", totalSpent: "Tổng chi tiêu", debt: "Công nợ", loading: "Đang tải..."
+        },
+        samples: {
+            title: "Quản lý hàng mẫu", addBtnText: "Gửi hàng mẫu", date: "Ngày gửi", customer: "Khách hàng", SKU: "SKU",
+            productName: "Tên sản phẩm", quantity: "Số lượng", note: "Ghi chú", loading: "Đang tải..."
+        },
+        cashflow: {
+            title: "Quản lý dòng tiền", currentBalanceHeader: "SỐ DƯ HIỆN TẠI", date: "Ngày", type: "Loại", category: "Hạng mục",
+            amount: "Số tiền", account: "Tài khoản", description: "Mô tả", loading: "Đang tải..."
+        },
+        analytics: { title: "Báo cáo & Phân tích", developing: "Chức năng đang phát triển" },
+        productModal: {
+            title: "Thêm sản phẩm mới", nameLabel: "Tên sản phẩm *", SKULabel: "SKU *", priceLabel: "Giá bán *",
+            statusLabel: "Trạng thái", statusOption1: "Đang bán", statusOption2: "Ngừng bán",
+            cancelBtn: "Hủy", submitBtn: "Thêm sản phẩm"
+        },
+        sampleModal: {
+            title: "Gửi hàng mẫu", customerLabel: "Khách hàng *", productLabel: "Sản phẩm *",
+            quantityLabel: "Số lượng *", noteLabel: "Ghi chú", loadingCustomer: "Đang tải...", loadingProduct: "Đang tải...",
+            cancelBtn: "Hủy", submitBtn: "Gửi hàng mẫu"
+        },
+        customerModal: {
+            title: "Thêm khách hàng mới", nameLabel: "Họ tên *", phoneLabel: "Số điện thoại *",
+            addressLabel: "Địa chỉ", groupLabel: "Nhóm khách hàng", groupOption1: "Khách lẻ", groupOption2: "Khách sỉ", groupOption3: "VIP",
+            cancelBtn: "Hủy", submitBtn: "Thêm khách hàng"
         }
-    });
-}
-
-function renderRecentOrders(orders) {
-    const tbody = document.getElementById('recentOrdersTableBody');
-    if (!tbody) return;
-    if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px">Chưa có dữ liệu</td></tr>';
-        return;
+    },
+    zh: {
+        sidebar: {
+            mainMenu: "主要管理", operationMenu: "运营", reportMenu: "报表",
+            dashboard: "仪表板", products: "产品库", orders: "订单",
+            customers: "客户", samples: "样品", cashflow: "资金流", analytics: "分析"
+        },
+        header: { refresh: "更新", search: "搜索..." },
+        dashboard: {
+            recentOrdersTitle: "最近订单", orderID: "订单号", customer: "客户", orderDate: "下单日期",
+            total: "总金额", status: "状态", loading: "加载中...", trendTitle: "收入趋势"
+        },
+        products: {
+            title: "产品列表", addBtnText: "添加产品", SKU: "SKU", name: "产品名称", category: "分类",
+            price: "价格", stock: "库存", status: "状态", action: "操作", loading: "加载中..."
+        },
+        orders: {
+            title: "订单管理", orderID: "订单号", date: "日期", customer: "客户", total: "总金额",
+            paymentMethod: "付款方式", status: "状态", detail: "详情", loading: "加载中..."
+        },
+        customers: {
+            title: "客户列表", addBtnText: "添加客户", id: "ID", name: "姓名", phone: "手机号",
+            address: "地址", group: "分组", totalSpent: "总消费", debt: "欠款", loading: "加载中..."
+        },
+        samples: {
+            title: "样品管理", addBtnText: "寄样", date: "寄出日期", customer: "客户", SKU: "SKU",
+            productName: "产品名称", quantity: "数量", note: "备注", loading: "加载中..."
+        },
+        cashflow: {
+            title: "资金流管理", currentBalanceHeader: "当前余额", date: "日期", type: "类型", category: "分类",
+            amount: "金额", account: "账户", description: "描述", loading: "加载中..."
+        },
+        analytics: { title: "报表与分析", developing: "功能开发中..." },
+        productModal: {
+            title: "添加新产品", nameLabel: "产品名称 *", SKULabel: "SKU *", priceLabel: "价格 *",
+            statusLabel: "状态", statusOption1: "在售", statusOption2: "停售",
+            cancelBtn: "取消", submitBtn: "添加产品"
+        },
+        sampleModal: {
+            title: "寄样", customerLabel: "客户 *", productLabel: "产品 *",
+            quantityLabel: "数量 *", noteLabel: "备注", loadingCustomer: "加载中...", loadingProduct: "加载中...",
+            cancelBtn: "取消", submitBtn: "寄样"
+        },
+        customerModal: {
+            title: "添加新客户", nameLabel: "姓名 *", phoneLabel: "手机号 *",
+            addressLabel: "地址", groupLabel: "客户分组", groupOption1: "零售客户", groupOption2: "批发客户", groupOption3: "VIP",
+            cancelBtn: "取消", submitBtn: "添加客户"
+        }
     }
-    tbody.innerHTML = orders.slice(0, 5).map(o => `
-        <tr>
-            <td style="font-weight:700">#${o.id}</td>
-            <td>${o.customer}</td>
-            <td>${new Date(o.date).toLocaleDateString('vi-VN')}</td>
-            <td style="font-weight:700">${formatCurrency(o.total)}</td>
-            <td><span class="badge badge-success">${o.status}</span></td>
-        </tr>
-    `).join('');
+};
+let currentLang = "vi";
+
+// Hàm Việt hóa/Trung hóa toàn bộ giao diện
+function updateLanguage() {
+    const l = LANGS[currentLang];
+    // Sidebar
+    document.getElementById('sidebar_mainMenu').innerText = l.sidebar.mainMenu;
+    document.getElementById('sidebar_operationMenu').innerText = l.sidebar.operationMenu;
+    document.getElementById('sidebar_reportMenu').innerText = l.sidebar.reportMenu;
+    document.getElementById('sidebar_dashboard').innerText = l.sidebar.dashboard;
+    document.getElementById('sidebar_products').innerText = l.sidebar.products;
+    document.getElementById('sidebar_orders').innerText = l.sidebar.orders;
+    document.getElementById('sidebar_customers').innerText = l.sidebar.customers;
+    document.getElementById('sidebar_samples').innerText = l.sidebar.samples;
+    document.getElementById('sidebar_cashflow').innerText = l.sidebar.cashflow;
+    document.getElementById('sidebar_analytics').innerText = l.sidebar.analytics;
+
+    // Header
+    document.getElementById('header_refresh').innerText = l.header.refresh;
+    document.getElementById('searchBox').placeholder = l.header.search;
+
+    // Dashboard
+    document.getElementById('pageTitle').innerText = l.dashboard.recentOrdersTitle;
+    document.getElementById('dashboard_recentOrdersTitle').innerText = l.dashboard.recentOrdersTitle;
+    document.getElementById('dashboard_orderID').innerText = l.dashboard.orderID;
+    document.getElementById('dashboard_customer').innerText = l.dashboard.customer;
+    document.getElementById('dashboard_orderDate').innerText = l.dashboard.orderDate;
+    document.getElementById('dashboard_total').innerText = l.dashboard.total;
+    document.getElementById('dashboard_status').innerText = l.dashboard.status;
+    document.getElementById('dashboard_loading').innerText = l.dashboard.loading;
+    document.getElementById('dashboard_trendTitle').innerText = l.dashboard.trendTitle;
+
+    // Products
+    document.getElementById('products_title').innerText = l.products.title;
+    document.getElementById('products_addBtnText').innerText = l.products.addBtnText;
+    document.getElementById('products_SKU').innerText = l.products.SKU;
+    document.getElementById('products_name').innerText = l.products.name;
+    document.getElementById('products_category').innerText = l.products.category;
+    document.getElementById('products_price').innerText = l.products.price;
+    document.getElementById('products_stock').innerText = l.products.stock;
+    document.getElementById('products_status').innerText = l.products.status;
+    document.getElementById('products_action').innerText = l.products.action;
+    document.getElementById('products_loading').innerText = l.products.loading;
+
+    // Orders
+    document.getElementById('orders_title').innerText = l.orders.title;
+    document.getElementById('orders_orderID').innerText = l.orders.orderID;
+    document.getElementById('orders_date').innerText = l.orders.date;
+    document.getElementById('orders_customer').innerText = l.orders.customer;
+    document.getElementById('orders_total').innerText = l.orders.total;
+    document.getElementById('orders_paymentMethod').innerText = l.orders.paymentMethod;
+    document.getElementById('orders_status').innerText = l.orders.status;
+    document.getElementById('orders_detail').innerText = l.orders.detail;
+    document.getElementById('orders_loading').innerText = l.orders.loading;
+
+    // Customers
+    document.getElementById('customers_title').innerText = l.customers.title;
+    document.getElementById('customers_addBtnText').innerText = l.customers.addBtnText;
+    document.getElementById('customers_id').innerText = l.customers.id;
+    document.getElementById('customers_name').innerText = l.customers.name;
+    document.getElementById('customers_phone').innerText = l.customers.phone;
+    document.getElementById('customers_address').innerText = l.customers.address;
+    document.getElementById('customers_group').innerText = l.customers.group;
+    document.getElementById('customers_totalSpent').innerText = l.customers.totalSpent;
+    document.getElementById('customers_debt').innerText = l.customers.debt;
+    document.getElementById('customers_loading').innerText = l.customers.loading;
+
+    // Samples
+    document.getElementById('samples_title').innerText = l.samples.title;
+    document.getElementById('samples_addBtnText').innerText = l.samples.addBtnText;
+    document.getElementById('samples_date').innerText = l.samples.date;
+    document.getElementById('samples_customer').innerText = l.samples.customer;
+    document.getElementById('samples_SKU').innerText = l.samples.SKU;
+    document.getElementById('samples_productName').innerText = l.samples.productName;
+    document.getElementById('samples_quantity').innerText = l.samples.quantity;
+    document.getElementById('samples_note').innerText = l.samples.note;
+    document.getElementById('samples_loading').innerText = l.samples.loading;
+
+    // Cashflow
+    document.getElementById('cashflow_title').innerText = l.cashflow.title;
+    document.getElementById('cashflow_currentBalanceHeader').innerText = l.cashflow.currentBalanceHeader;
+    document.getElementById('cashflow_date').innerText = l.cashflow.date;
+    document.getElementById('cashflow_type').innerText = l.cashflow.type;
+    document.getElementById('cashflow_category').innerText = l.cashflow.category;
+    document.getElementById('cashflow_amount').innerText = l.cashflow.amount;
+    document.getElementById('cashflow_account').innerText = l.cashflow.account;
+    document.getElementById('cashflow_description').innerText = l.cashflow.description;
+    document.getElementById('cashflow_loading').innerText = l.cashflow.loading;
+
+    // Analytics
+    document.getElementById('analytics_title').innerText = l.analytics.title;
+    document.getElementById('analytics_developing').innerText = l.analytics.developing;
+
+    // Product modal
+    document.getElementById('productModal_title').innerText = l.productModal.title;
+    document.getElementById('productModal_nameLabel').innerText = l.productModal.nameLabel;
+    document.getElementById('productModal_SKULabel').innerText = l.productModal.SKULabel;
+    document.getElementById('productModal_priceLabel').innerText = l.productModal.priceLabel;
+    document.getElementById('productModal_statusLabel').innerText = l.productModal.statusLabel;
+    document.getElementById('productModal_statusOption1').innerText = l.productModal.statusOption1;
+    document.getElementById('productModal_statusOption2').innerText = l.productModal.statusOption2;
+    document.getElementById('productModal_cancelBtn').innerText = l.productModal.cancelBtn;
+    document.getElementById('productModal_submitBtn').innerText = l.productModal.submitBtn;
+
+    // Sample modal
+    document.getElementById('sampleModal_title').innerText = l.sampleModal.title;
+    document.getElementById('sampleModal_customerLabel').innerText = l.sampleModal.customerLabel;
+    document.getElementById('sampleModal_productLabel').innerText = l.sampleModal.productLabel;
+    document.getElementById('sampleModal_quantityLabel').innerText = l.sampleModal.quantityLabel;
+    document.getElementById('sampleModal_noteLabel').innerText = l.sampleModal.noteLabel;
+    document.getElementById('sampleModal_loadingCustomer').innerText = l.sampleModal.loadingCustomer;
+    document.getElementById('sampleModal_loadingProduct').innerText = l.sampleModal.loadingProduct;
+    document.getElementById('sampleModal_cancelBtn').innerText = l.sampleModal.cancelBtn;
+    document.getElementById('sampleModal_submitBtn').innerText = l.sampleModal.submitBtn;
+
+    // Customer modal
+    document.getElementById('customerModal_title').innerText = l.customerModal.title;
+    document.getElementById('customerModal_nameLabel').innerText = l.customerModal.nameLabel;
+    document.getElementById('customerModal_phoneLabel').innerText = l.customerModal.phoneLabel;
+    document.getElementById('customerModal_addressLabel').innerText = l.customerModal.addressLabel;
+    document.getElementById('customerModal_groupLabel').innerText = l.customerModal.groupLabel;
+    document.getElementById('customerModal_groupOption1').innerText = l.customerModal.groupOption1;
+    document.getElementById('customerModal_groupOption2').innerText = l.customerModal.groupOption2;
+    document.getElementById('customerModal_groupOption3').innerText = l.customerModal.groupOption3;
+    document.getElementById('customerModal_cancelBtn').innerText = l.customerModal.cancelBtn;
+    document.getElementById('customerModal_submitBtn').innerText = l.customerModal.submitBtn;
 }
 
-window.closeModal = closeModal;
-window.editProduct = (sku) => showNotification(`Chỉnh sửa ${sku} - Liên hệ Admin`, 'info');
+// Gắn event cho switch ngôn ngữ
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('languageSwitcher').addEventListener('change', function() {
+        currentLang = this.value;
+        updateLanguage();
+    });
+    updateLanguage(); // Giao diện mặc định là tiếng Việt khi load lần đầu
+});
